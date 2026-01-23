@@ -19,6 +19,8 @@ class BucketPerformance:
     std_reward: float
     best_play_id: Optional[str] = None
     play_distribution: Dict[str, int] = field(default_factory=dict)
+    # play_id -> mean_reward
+    play_performance: Dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -44,7 +46,8 @@ class EvaluationReport:
                     "mean_reward": bp.mean_reward,
                     "std_reward": bp.std_reward,
                     "best_play_id": bp.best_play_id,
-                    "play_distribution": bp.play_distribution
+                    "play_distribution": bp.play_distribution,
+                    "play_performance": bp.play_performance
                 }
                 for bp in self.bucket_performance
             ]
@@ -74,7 +77,10 @@ def evaluate_policy_detailed(
     all_rewards = []
     bucket_rewards: Dict[str, List[float]] = defaultdict(list)
     bucket_plays: Dict[str, List[str]] = defaultdict(list)
-
+    # bucket -> play_id -> list of rewards
+    bucket_play_rewards: Dict[str, Dict[str, List[float]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
 
     for episode in range(num_episodes):
         obs, info = env.reset(seed=seed + episode if seed else None)
@@ -95,6 +101,7 @@ def evaluate_policy_detailed(
         all_rewards.append(reward)
         bucket_rewards[bucket].append(reward)
         bucket_plays[bucket].append(play_id)
+        bucket_play_rewards[bucket][play_id].append(reward)
 
     # Compute overall metrics
     overall_mean = float(np.mean(all_rewards))
@@ -112,13 +119,19 @@ def evaluate_policy_detailed(
 
         best_play = max(play_counts.items(), key=lambda x: x[1])[0] if play_counts else None
 
+        # Calculate mean reward per play
+        play_perf = {}
+        for pid, prewards in bucket_play_rewards[bucket].items():
+            play_perf[pid] = float(np.mean(prewards))
+
         bucket_performance.append(BucketPerformance(
             bucket=bucket,
             num_episodes=len(rewards),
             mean_reward=float(np.mean(rewards)),
             std_reward=float(np.std(rewards)),
             best_play_id=best_play,
-            play_distribution=dict(play_counts)
+            play_distribution=dict(play_counts),
+            play_performance=play_perf
         ))
 
     report = EvaluationReport(

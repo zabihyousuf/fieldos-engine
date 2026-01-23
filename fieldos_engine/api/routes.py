@@ -457,9 +457,26 @@ async def evaluate(request: schemas.EvaluateRequest):
             seed=request.seed
         )
 
+        # Generate Plot using fieldos_engine.utils.viz
+        from ..utils.viz import plot_policy_performance
+        
+        # Save to static/plots directory (mocking static hosting)
+        from pathlib import Path
+        plots_dir = Path(__file__).parent.parent / "data" / "plots"
+        plots_dir.mkdir(parents=True, exist_ok=True)
+        
+        plot_filename = f"eval_{generate_id('plot')}.png"
+        plot_path = plots_dir / plot_filename
+        
+        plot_policy_performance(report, str(plot_path))
+        
+        # URL would be relative or absolute in real app
+        plot_url = f"/static/plots/{plot_filename}"
+
         response = schemas.EvaluateResponse(
             policy_id=request.policy_id,
-            report=report.to_dict()
+            report=report.to_dict(),
+            plot_url=plot_url
         )
 
         return response

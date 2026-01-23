@@ -98,6 +98,7 @@ class EvaluateResponse(BaseModel):
     """Evaluate policy response."""
     policy_id: str
     report: Dict[str, Any]
+    plot_url: Optional[str] = None
 
 
 # ============================================================================

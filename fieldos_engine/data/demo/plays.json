@@ -1,0 +1,164 @@
+[
+  {
+    "id": "play_trips_flood",
+    "name": "Trips Flood",
+    "formation": {
+      "id": "form_trips_right",
+      "name": "Trips Right",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": 0.0, "y": 10.0}},
+        {"role": "WR2", "position": {"x": 0.0, "y": 7.0}},
+        {"role": "WR3", "position": {"x": 0.0, "y": 4.0}}
+      ]
+    },
+    "assignments": {
+      "QB": null,
+      "CENTER": null,
+      "WR1": {"id": "route_corner_14", "name": "14-Yard Corner", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 14.0, "y_yards": 6.0, "time_ms": 2600}]},
+      "WR2": {"id": "route_out_8", "name": "8-Yard Out", "breakpoints": [{"x_yards": 8.0, "y_yards": 0.0, "time_ms": 1400}, {"x_yards": 8.0, "y_yards": 6.0, "time_ms": 1800}]},
+      "WR3": {"id": "route_stop_5", "name": "5-Yard Stop", "breakpoints": [{"x_yards": 5.0, "y_yards": 0.0, "time_ms": 1000}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR2", "WR3", "WR1"],
+      "max_time_to_throw_ms": 3000.0,
+      "scramble_allowed": false
+    }
+  },
+  {
+    "id": "play_bunch_quick_slants",
+    "name": "Bunch Quick Slants",
+    "formation": {
+      "id": "form_bunch",
+      "name": "Bunch",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": 0.0, "y": 8.0}},
+        {"role": "WR2", "position": {"x": -1.0, "y": 6.5}},
+        {"role": "WR3", "position": {"x": 1.0, "y": 6.5}}
+      ]
+    },
+    "assignments": {
+      "QB": null,
+      "CENTER": null,
+      "WR1": {"id": "route_slant_8", "name": "8-Yard Slant", "breakpoints": [{"x_yards": 2.0, "y_yards": 0.0, "time_ms": 400}, {"x_yards": 8.0, "y_yards": 3.0, "time_ms": 1400}]},
+      "WR2": {"id": "route_slant_8", "name": "8-Yard Slant", "breakpoints": [{"x_yards": 2.0, "y_yards": 0.0, "time_ms": 400}, {"x_yards": 8.0, "y_yards": 3.0, "time_ms": 1400}]},
+      "WR3": {"id": "route_slant_8", "name": "8-Yard Slant", "breakpoints": [{"x_yards": 2.0, "y_yards": 0.0, "time_ms": 400}, {"x_yards": 8.0, "y_yards": 3.0, "time_ms": 1400}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR1", "WR2", "WR3"],
+      "max_time_to_throw_ms": 2500.0,
+      "scramble_allowed": false
+    }
+  },
+  {
+    "id": "play_twins_smash",
+    "name": "Twins Smash",
+    "formation": {
+      "id": "form_twins_right",
+      "name": "Twins Right",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": 0.0, "y": 10.0}},
+        {"role": "WR2", "position": {"x": 0.0, "y": 7.0}},
+        {"role": "WR3", "position": {"x": 0.0, "y": -10.0}}
+      ]
+    },
+    "assignments": {
+      "QB": null,
+      "CENTER": null,
+      "WR1": {"id": "route_corner_14", "name": "14-Yard Corner", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 14.0, "y_yards": 6.0, "time_ms": 2600}]},
+      "WR2": {"id": "route_hitch_6", "name": "6-Yard Hitch", "breakpoints": [{"x_yards": 6.0, "y_yards": 0.0, "time_ms": 1200}, {"x_yards": 5.0, "y_yards": 0.0, "time_ms": 1400}]},
+      "WR3": {"id": "route_go", "name": "Go (Vertical)", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 20.0, "y_yards": 0.0, "time_ms": 3600}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR2", "WR1", "WR3"],
+      "max_time_to_throw_ms": 3000.0,
+      "scramble_allowed": false
+    }
+  },
+  {
+    "id": "play_tight_levels",
+    "name": "Tight Levels",
+    "formation": {
+      "id": "form_tight",
+      "name": "Tight",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": 0.0, "y": 3.0}},
+        {"role": "WR2", "position": {"x": 0.0, "y": -3.0}},
+        {"role": "WR3", "position": {"x": -2.0, "y": 6.0}}
+      ]
+    },
+    "assignments": {
+      "QB": null,
+      "CENTER": null,
+      "WR1": {"id": "route_cross_12", "name": "12-Yard Cross", "breakpoints": [{"x_yards": 8.0, "y_yards": 0.0, "time_ms": 1400}, {"x_yards": 12.0, "y_yards": 8.0, "time_ms": 2200}]},
+      "WR2": {"id": "route_drag_10", "name": "10-Yard Drag", "breakpoints": [{"x_yards": 2.0, "y_yards": 0.0, "time_ms": 400}, {"x_yards": 3.0, "y_yards": 6.0, "time_ms": 1600}]},
+      "WR3": {"id": "route_out_8", "name": "8-Yard Out", "breakpoints": [{"x_yards": 8.0, "y_yards": 0.0, "time_ms": 1400}, {"x_yards": 8.0, "y_yards": 6.0, "time_ms": 1800}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR2", "WR1", "WR3"],
+      "max_time_to_throw_ms": 2800.0,
+      "scramble_allowed": false
+    }
+  },
+  {
+    "id": "play_spread_vertical",
+    "name": "Spread Vertical",
+    "formation": {
+      "id": "form_spread",
+      "name": "Spread",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": 0.0, "y": 12.0}},
+        {"role": "WR2", "position": {"x": 0.0, "y": 6.0}},
+        {"role": "WR3", "position": {"x": 0.0, "y": -12.0}}
+      ]
+    },
+    "assignments": {
+      "QB": null,
+      "CENTER": null,
+      "WR1": {"id": "route_go", "name": "Go (Vertical)", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 20.0, "y_yards": 0.0, "time_ms": 3600}]},
+      "WR2": {"id": "route_post_15", "name": "15-Yard Post", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 15.0, "y_yards": -6.0, "time_ms": 2800}]},
+      "WR3": {"id": "route_go", "name": "Go (Vertical)", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 20.0, "y_yards": 0.0, "time_ms": 3600}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR2", "WR1", "WR3"],
+      "max_time_to_throw_ms": 3500.0,
+      "scramble_allowed": false
+    }
+  },
+  {
+    "id": "play_empty_all_go",
+    "name": "Empty All Go",
+    "formation": {
+      "id": "form_empty",
+      "name": "Empty",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": 0.0, "y": 10.0}},
+        {"role": "WR2", "position": {"x": 0.0, "y": -10.0}},
+        {"role": "WR3", "position": {"x": -3.0, "y": 0.0}}
+      ]
+    },
+    "assignments": {
+      "QB": null,
+      "CENTER": null,
+      "WR1": {"id": "route_go", "name": "Go (Vertical)", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 20.0, "y_yards": 0.0, "time_ms": 3600}]},
+      "WR2": {"id": "route_go", "name": "Go (Vertical)", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 20.0, "y_yards": 0.0, "time_ms": 3600}]},
+      "WR3": {"id": "route_go", "name": "Go (Vertical)", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 20.0, "y_yards": 0.0, "time_ms": 3600}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR1", "WR2", "WR3"],
+      "max_time_to_throw_ms": 3500.0,
+      "scramble_allowed": false
+    }
+  }
+]

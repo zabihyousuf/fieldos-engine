@@ -1,0 +1,167 @@
+[
+  {
+    "id": "player_qb1",
+    "name": "Marcus Riley",
+    "side": "OFFENSE",
+    "role": "QB",
+    "attributes": {
+      "speed": 75.0,
+      "acceleration": 75.0,
+      "agility": 80.0,
+      "change_of_direction": 80.0,
+      "stamina": 85.0,
+      "throw_power": 85.0,
+      "short_acc": 90.0,
+      "mid_acc": 85.0,
+      "deep_acc": 75.0,
+      "release_time_ms": 350.0,
+      "decision_latency_ms": 250.0
+    }
+  },
+  {
+    "id": "player_center1",
+    "name": "Jake Stone",
+    "side": "OFFENSE",
+    "role": "CENTER",
+    "attributes": {
+      "speed": 60.0,
+      "acceleration": 60.0,
+      "agility": 65.0,
+      "stamina": 75.0
+    }
+  },
+  {
+    "id": "player_wr1_1",
+    "name": "Tyrell Davis",
+    "side": "OFFENSE",
+    "role": "WR1",
+    "attributes": {
+      "speed": 95.0,
+      "acceleration": 92.0,
+      "agility": 90.0,
+      "change_of_direction": 88.0,
+      "stamina": 85.0,
+      "hands": 92.0,
+      "route_running": 90.0,
+      "separation": 93.0
+    }
+  },
+  {
+    "id": "player_wr2_1",
+    "name": "Jordan Matthews",
+    "side": "OFFENSE",
+    "role": "WR2",
+    "attributes": {
+      "speed": 88.0,
+      "acceleration": 85.0,
+      "agility": 87.0,
+      "change_of_direction": 85.0,
+      "stamina": 82.0,
+      "hands": 88.0,
+      "route_running": 87.0,
+      "separation": 85.0
+    }
+  },
+  {
+    "id": "player_wr3_1",
+    "name": "Chris Anderson",
+    "side": "OFFENSE",
+    "role": "WR3",
+    "attributes": {
+      "speed": 82.0,
+      "acceleration": 80.0,
+      "agility": 83.0,
+      "change_of_direction": 82.0,
+      "stamina": 80.0,
+      "hands": 85.0,
+      "route_running": 83.0,
+      "separation": 80.0
+    }
+  },
+  {
+    "id": "player_rusher1",
+    "name": "Dante Williams",
+    "side": "DEFENSE",
+    "role": "RUSHER",
+    "attributes": {
+      "speed": 85.0,
+      "acceleration": 88.0,
+      "agility": 80.0,
+      "stamina": 82.0,
+      "pass_rush": 88.0,
+      "get_off": 90.0,
+      "contain": 82.0
+    }
+  },
+  {
+    "id": "player_cb1_1",
+    "name": "Isaiah Brown",
+    "side": "DEFENSE",
+    "role": "CB1",
+    "attributes": {
+      "speed": 92.0,
+      "acceleration": 90.0,
+      "agility": 91.0,
+      "change_of_direction": 90.0,
+      "stamina": 85.0,
+      "man_coverage": 90.0,
+      "zone_coverage": 85.0,
+      "reaction_time_ms": 220.0,
+      "ball_skills": 87.0,
+      "closing_speed": 92.0
+    }
+  },
+  {
+    "id": "player_cb2_1",
+    "name": "Malik Johnson",
+    "side": "DEFENSE",
+    "role": "CB2",
+    "attributes": {
+      "speed": 88.0,
+      "acceleration": 86.0,
+      "agility": 88.0,
+      "change_of_direction": 87.0,
+      "stamina": 83.0,
+      "man_coverage": 85.0,
+      "zone_coverage": 87.0,
+      "reaction_time_ms": 250.0,
+      "ball_skills": 82.0,
+      "closing_speed": 88.0
+    }
+  },
+  {
+    "id": "player_safety1",
+    "name": "Xavier Thompson",
+    "side": "DEFENSE",
+    "role": "SAFETY",
+    "attributes": {
+      "speed": 87.0,
+      "acceleration": 85.0,
+      "agility": 85.0,
+      "change_of_direction": 84.0,
+      "stamina": 86.0,
+      "man_coverage": 80.0,
+      "zone_coverage": 92.0,
+      "reaction_time_ms": 240.0,
+      "ball_skills": 88.0,
+      "closing_speed": 87.0
+    }
+  },
+  {
+    "id": "player_lb1",
+    "name": "Devon Clark",
+    "side": "DEFENSE",
+    "role": "LB",
+    "attributes": {
+      "speed": 82.0,
+      "acceleration": 80.0,
+      "agility": 81.0,
+      "stamina": 84.0,
+      "man_coverage": 75.0,
+      "zone_coverage": 85.0,
+      "reaction_time_ms": 270.0,
+      "ball_skills": 78.0,
+      "closing_speed": 82.0
+    }
+  }
+]

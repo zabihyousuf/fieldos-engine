@@ -1,0 +1,76 @@
+[
+  {
+    "id": "rules_standard",
+    "name": "Standard 5v5",
+    "players_per_side": 5,
+    "field": {
+      "width_yards": 40.0,
+      "total_length_yards": 80.0,
+      "endzone_depth_yards": 10.0,
+      "no_run_zone_depth_yards": 5.0
+    },
+    "downs": {
+      "use_midfield_line_to_gain": true,
+      "line_to_gain_yards": 25.0,
+      "reset_at_midfield": true,
+      "downs_to_convert": 3
+    },
+    "no_run_zone": {
+      "enabled": true,
+      "depth_from_goal_yards": 5.0
+    },
+    "rush": {
+      "rusher_distance_yards": 7.0,
+      "rush_delay_seconds": 0.0,
+      "max_rushers": 1,
+      "qb_can_run": false
+    },
+    "motion": {
+      "allow_motion": true,
+      "lateral_only": true
+    },
+    "scoring": {
+      "td_points": 6,
+      "xp1_points": 1,
+      "xp2_points": 2,
+      "safety_points": 2
+    }
+  },
+  {
+    "id": "rules_compressed",
+    "name": "Compressed Field",
+    "players_per_side": 5,
+    "field": {
+      "width_yards": 30.0,
+      "total_length_yards": 60.0,
+      "endzone_depth_yards": 8.0,
+      "no_run_zone_depth_yards": 5.0
+    },
+    "downs": {
+      "use_midfield_line_to_gain": true,
+      "line_to_gain_yards": 20.0,
+      "reset_at_midfield": true,
+      "downs_to_convert": 3
+    },
+    "no_run_zone": {
+      "enabled": true,
+      "depth_from_goal_yards": 5.0
+    },
+    "rush": {
+      "rusher_distance_yards": 7.0,
+      "rush_delay_seconds": 0.0,
+      "max_rushers": 1,
+      "qb_can_run": false
+    },
+    "motion": {
+      "allow_motion": true,
+      "lateral_only": true
+    },
+    "scoring": {
+      "td_points": 6,
+      "xp1_points": 1,
+      "xp2_points": 2,
+      "safety_points": 2
+    }
+  }
+]

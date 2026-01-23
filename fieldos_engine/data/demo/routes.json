@@ -1,0 +1,88 @@
+[
+  {
+    "id": "route_slant_8",
+    "name": "8-Yard Slant",
+    "breakpoints": [
+      {"x_yards": 2.0, "y_yards": 0.0, "time_ms": 400},
+      {"x_yards": 8.0, "y_yards": 3.0, "time_ms": 1400}
+    ]
+  },
+  {
+    "id": "route_hitch_6",
+    "name": "6-Yard Hitch",
+    "breakpoints": [
+      {"x_yards": 6.0, "y_yards": 0.0, "time_ms": 1200},
+      {"x_yards": 5.0, "y_yards": 0.0, "time_ms": 1400}
+    ]
+  },
+  {
+    "id": "route_drag_10",
+    "name": "10-Yard Drag",
+    "breakpoints": [
+      {"x_yards": 2.0, "y_yards": 0.0, "time_ms": 400},
+      {"x_yards": 3.0, "y_yards": 6.0, "time_ms": 1600}
+    ]
+  },
+  {
+    "id": "route_cross_12",
+    "name": "12-Yard Cross",
+    "breakpoints": [
+      {"x_yards": 8.0, "y_yards": 0.0, "time_ms": 1400},
+      {"x_yards": 12.0, "y_yards": 8.0, "time_ms": 2200}
+    ]
+  },
+  {
+    "id": "route_corner_14",
+    "name": "14-Yard Corner",
+    "breakpoints": [
+      {"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800},
+      {"x_yards": 14.0, "y_yards": 6.0, "time_ms": 2600}
+    ]
+  },
+  {
+    "id": "route_post_15",
+    "name": "15-Yard Post",
+    "breakpoints": [
+      {"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800},
+      {"x_yards": 15.0, "y_yards": -6.0, "time_ms": 2800}
+    ]
+  },
+  {
+    "id": "route_go",
+    "name": "Go (Vertical)",
+    "breakpoints": [
+      {"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800},
+      {"x_yards": 20.0, "y_yards": 0.0, "time_ms": 3600}
+    ]
+  },
+  {
+    "id": "route_out_8",
+    "name": "8-Yard Out",
+    "breakpoints": [
+      {"x_yards": 8.0, "y_yards": 0.0, "time_ms": 1400},
+      {"x_yards": 8.0, "y_yards": 6.0, "time_ms": 1800}
+    ]
+  },
+  {
+    "id": "route_in_10",
+    "name": "10-Yard In",
+    "breakpoints": [
+      {"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800},
+      {"x_yards": 10.0, "y_yards": -6.0, "time_ms": 2200}
+    ]
+  },
+  {
+    "id": "route_stop_5",
+    "name": "5-Yard Stop",
+    "breakpoints": [
+      {"x_yards": 5.0, "y_yards": 0.0, "time_ms": 1000}
+    ]
+  },
+  {
+    "id": "route_block",
+    "name": "Block/Stay",
+    "breakpoints": [
+      {"x_yards": 0.0, "y_yards": 0.0, "time_ms": 100}
+    ]
+  }
+]

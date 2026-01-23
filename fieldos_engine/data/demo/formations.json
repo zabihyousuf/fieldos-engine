@@ -1,0 +1,90 @@
+[
+  {
+    "id": "form_trips_right",
+    "name": "Trips Right",
+    "slots": [
+      {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+      {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+      {"role": "WR1", "position": {"x": 0.0, "y": 10.0}},
+      {"role": "WR2", "position": {"x": 0.0, "y": 7.0}},
+      {"role": "WR3", "position": {"x": 0.0, "y": 4.0}}
+    ]
+  },
+  {
+    "id": "form_trips_left",
+    "name": "Trips Left",
+    "slots": [
+      {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+      {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+      {"role": "WR1", "position": {"x": 0.0, "y": -10.0}},
+      {"role": "WR2", "position": {"x": 0.0, "y": -7.0}},
+      {"role": "WR3", "position": {"x": 0.0, "y": -4.0}}
+    ]
+  },
+  {
+    "id": "form_twins_right",
+    "name": "Twins Right",
+    "slots": [
+      {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+      {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+      {"role": "WR1", "position": {"x": 0.0, "y": 10.0}},
+      {"role": "WR2", "position": {"x": 0.0, "y": 7.0}},
+      {"role": "WR3", "position": {"x": 0.0, "y": -10.0}}
+    ]
+  },
+  {
+    "id": "form_twins_left",
+    "name": "Twins Left",
+    "slots": [
+      {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+      {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+      {"role": "WR1", "position": {"x": 0.0, "y": -10.0}},
+      {"role": "WR2", "position": {"x": 0.0, "y": -7.0}},
+      {"role": "WR3", "position": {"x": 0.0, "y": 10.0}}
+    ]
+  },
+  {
+    "id": "form_bunch",
+    "name": "Bunch",
+    "slots": [
+      {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+      {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+      {"role": "WR1", "position": {"x": 0.0, "y": 8.0}},
+      {"role": "WR2", "position": {"x": -1.0, "y": 6.5}},
+      {"role": "WR3", "position": {"x": 1.0, "y": 6.5}}
+    ]
+  },
+  {
+    "id": "form_spread",
+    "name": "Spread",
+    "slots": [
+      {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+      {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+      {"role": "WR1", "position": {"x": 0.0, "y": 12.0}},
+      {"role": "WR2", "position": {"x": 0.0, "y": 6.0}},
+      {"role": "WR3", "position": {"x": 0.0, "y": -12.0}}
+    ]
+  },
+  {
+    "id": "form_tight",
+    "name": "Tight",
+    "slots": [
+      {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+      {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+      {"role": "WR1", "position": {"x": 0.0, "y": 3.0}},
+      {"role": "WR2", "position": {"x": 0.0, "y": -3.0}},
+      {"role": "WR3", "position": {"x": -2.0, "y": 6.0}}
+    ]
+  },
+  {
+    "id": "form_empty",
+    "name": "Empty",
+    "slots": [
+      {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+      {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+      {"role": "WR1", "position": {"x": 0.0, "y": 10.0}},
+      {"role": "WR2", "position": {"x": 0.0, "y": -10.0}},
+      {"role": "WR3", "position": {"x": -3.0, "y": 0.0}}
+    ]
+  }
+]

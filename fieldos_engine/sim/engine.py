@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from ..core.models import (
     Play, Player, Scenario, Role, OutcomeType, PlayOutcome,
-    FailureMode, Point2D, SimMode
+    FailureMode, Point2D, SimMode, GameSituation
 )
 from ..core.validation import validate_all_before_sim
 from .field import FieldCoordinates
@@ -63,7 +63,8 @@ class SimulationEngine:
         defensive_players: Dict[Role, Player],
         mode: SimMode = SimMode.EVAL,
         target_override: Optional[Role] = None,
-        record_trace: bool = False
+        record_trace: bool = False,
+        situation: Optional[GameSituation] = None
     ) -> Tuple[PlayOutcome, Optional[SimulationTrace]]:
         """
         Simulate a single play.
@@ -76,6 +77,7 @@ class SimulationEngine:
             mode: EVAL (auto-select target) or POLICY (use target_override)
             target_override: Forced target role (for RL training)
             record_trace: Whether to record full trace
+            situation: Game situation for dynamic defensive adjustments
 
         Returns:
             (PlayOutcome, Optional[SimulationTrace])
@@ -83,12 +85,21 @@ class SimulationEngine:
         # Validate inputs
         validate_all_before_sim(play, scenario, offensive_players, defensive_players)
 
-        # Initialize coverage assignments
+        # Get receiver positions from formation for man coverage alignment
+        receiver_positions = {
+            slot.role: slot.position
+            for slot in play.formation.slots
+            if slot.role in [Role.WR1, Role.WR2, Role.WR3, Role.CENTER]
+        }
+
+        # Initialize coverage assignments with receiver positions and situation
         coverage = CoverageAssignment(
             scenario.defense_call,
             scenario.defender_start_positions,
             list(play.qb_plan.progression_roles),
-            rng=self.rng
+            rng=self.rng,
+            receiver_positions=receiver_positions,
+            situation=situation
         )
 
         # Get the rusher role (if any) from coverage

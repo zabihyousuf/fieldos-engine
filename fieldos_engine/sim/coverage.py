@@ -4,11 +4,13 @@ import numpy as np
 from typing import Dict, List, Tuple, Optional, Union
 from ..core.models import (
     CoverageType, CoverageShell, Role, Point2D,
-    PlayerAttributes, DefenseCall, RusherPosition
+    PlayerAttributes, DefenseCall, RusherPosition,
+    GameSituation, DownDistanceBucket
 )
 
 
 # Zone definitions with (x_center, y_center, radius) - using sim coords (x=downfield, y=lateral)
+# These are base positions that will be adjusted by situation
 ZONE_DEFINITIONS = {
     # Cover 2 zones
     "deep_left_half": (20.0, -8.0, 12.0),
@@ -33,6 +35,44 @@ ZONE_DEFINITIONS = {
     "middle_hook": (7.0, 0.0, 8.0),
 }
 
+# Situation-based depth adjustments
+SITUATION_DEPTH_ADJUSTMENTS = {
+    DownDistanceBucket.FIRST_ANY: 0.0,       # Normal depth
+    DownDistanceBucket.SECOND_SHORT: -1.0,   # Play tighter
+    DownDistanceBucket.SECOND_LONG: 2.0,     # Play deeper
+    DownDistanceBucket.THIRD_SHORT: -2.0,    # Very tight - protect short
+    DownDistanceBucket.THIRD_LONG: 3.0,      # Very deep - protect long
+    DownDistanceBucket.REDZONE: -2.0,        # Compressed field
+    DownDistanceBucket.GOALLINE: -3.0,       # Very compressed
+}
+
+
+def adjust_positions_for_situation(
+    positions: Dict[Role, Point2D],
+    situation: Optional[GameSituation] = None
+) -> Dict[Role, Point2D]:
+    """
+    Adjust defensive positions based on game situation.
+
+    3rd & Long: Push safeties deeper, give cushion
+    3rd & Short: Tighten up, play press/near LOS
+    """
+    if situation is None:
+        return positions
+
+    bucket = situation.bucket
+    depth_adjustment = SITUATION_DEPTH_ADJUSTMENTS.get(bucket, 0.0)
+
+    adjusted = {}
+    for role, pos in positions.items():
+        # Adjust x (depth) based on situation
+        new_x = pos.x + depth_adjustment
+        # Keep minimum depth of 1 yard
+        new_x = max(1.0, new_x)
+        adjusted[role] = Point2D(x=new_x, y=pos.y)
+
+    return adjusted
+
 
 class CoverageAssignment:
     """
@@ -41,7 +81,7 @@ class CoverageAssignment:
     In 5v5 flag football with D1-D5 defenders:
     - D1: Outside left (typically corner/flat)
     - D2: Inside left (typically LB/hook)
-    - D3: Middle (typically MLB/safety/rusher)
+    - D3: Middle (typically MLB/rusher/safety)
     - D4: Inside right (typically LB/hook) or deep safety
     - D5: Outside right (typically corner/flat)
     """
@@ -51,11 +91,21 @@ class CoverageAssignment:
         defense_call: DefenseCall,
         defender_positions: Dict[Role, Point2D],
         offensive_receivers: List[Role],
-        rng: Optional[np.random.Generator] = None
+        rng: Optional[np.random.Generator] = None,
+        receiver_positions: Optional[Dict[Role, Point2D]] = None,
+        situation: Optional[GameSituation] = None
     ):
         self.defense_call = defense_call
-        self.initial_positions = defender_positions
+        self.situation = situation
+
+        # Adjust positions based on situation
+        if situation:
+            self.initial_positions = adjust_positions_for_situation(defender_positions, situation)
+        else:
+            self.initial_positions = defender_positions
+
         self.offensive_receivers = offensive_receivers
+        self.receiver_positions = receiver_positions or {}
         self.rng = rng or np.random.default_rng()
 
         # Determine which defender is the rusher (if any)
@@ -121,6 +171,77 @@ class CoverageAssignment:
             else:
                 return self._assign_zone_cover2()
 
+    def _match_defenders_to_receivers(
+        self,
+        defenders: List[Role],
+        receivers: List[Role]
+    ) -> Dict[Role, Role]:
+        """
+        Match defenders to receivers based on lateral position alignment.
+        Each defender guards the receiver closest to their lateral position.
+
+        This ensures DBs line up DIRECTLY IN FRONT of their assigned receiver.
+        """
+        if not self.receiver_positions:
+            # Fallback: match by order
+            matches = {}
+            for i, defender in enumerate(defenders):
+                if i < len(receivers):
+                    matches[defender] = receivers[i]
+            return matches
+
+        # Get receiver lateral positions
+        receiver_lateral = {}
+        for role in receivers:
+            if role in self.receiver_positions:
+                receiver_lateral[role] = self.receiver_positions[role].y
+            else:
+                # Estimate based on role
+                role_y_defaults = {
+                    Role.WR1: 10.0,
+                    Role.WR2: 7.0,
+                    Role.WR3: 4.0,
+                    Role.CENTER: 0.0
+                }
+                receiver_lateral[role] = role_y_defaults.get(role, 0.0)
+
+        # Get defender lateral positions
+        defender_lateral = {
+            d: self.initial_positions[d].y
+            for d in defenders
+            if d in self.initial_positions
+        }
+
+        # Greedy matching: for each receiver, find closest unassigned defender
+        matches = {}
+        available_defenders = list(defenders)
+
+        # Sort receivers by lateral position (left to right)
+        sorted_receivers = sorted(receivers, key=lambda r: receiver_lateral.get(r, 0.0))
+
+        for receiver in sorted_receivers:
+            if not available_defenders:
+                break
+
+            rec_y = receiver_lateral.get(receiver, 0.0)
+
+            # Find closest defender
+            closest_defender = None
+            closest_dist = float('inf')
+
+            for defender in available_defenders:
+                def_y = defender_lateral.get(defender, 0.0)
+                dist = abs(rec_y - def_y)
+                if dist < closest_dist:
+                    closest_dist = dist
+                    closest_defender = defender
+
+            if closest_defender:
+                matches[closest_defender] = receiver
+                available_defenders.remove(closest_defender)
+
+        return matches
+
     def _assign_man_cover0(self) -> Dict[Role, Optional[Union[Role, str]]]:
         """
         Man Cover 0: All 5 defenders in man coverage, no deep help.
@@ -134,25 +255,21 @@ class CoverageAssignment:
             assignments[self.rusher_role] = None
             coverage_defenders = [d for d in coverage_defenders if d != self.rusher_role]
 
-        # Match defenders to receivers based on position alignment
-        receivers = self.offensive_receivers.copy()
+        # Get all receivers including CENTER
+        receivers = list(self.offensive_receivers)
+        if Role.CENTER not in receivers:
+            receivers.append(Role.CENTER)
 
-        # Sort defenders by lateral position (y) to match with receivers
-        def_positions = [(d, self.initial_positions[d].y) for d in coverage_defenders]
-        def_positions.sort(key=lambda x: x[1])
+        # Match defenders to receivers by position
+        matches = self._match_defenders_to_receivers(coverage_defenders, receivers)
 
-        # Pair with receivers (sorted by their expected position)
-        for i, (defender, _) in enumerate(def_positions):
-            if i < len(receivers):
-                assignments[defender] = receivers[i]
-            else:
-                # Extra defender covers CENTER or last receiver
-                if Role.CENTER in receivers:
-                    assignments[defender] = Role.CENTER
-                elif receivers:
-                    assignments[defender] = receivers[-1]
-                else:
-                    assignments[defender] = "middle_hook"
+        for defender, receiver in matches.items():
+            assignments[defender] = receiver
+
+        # Any remaining defenders
+        for defender in coverage_defenders:
+            if defender not in assignments:
+                assignments[defender] = "middle_hook"
 
         return assignments
 
@@ -173,14 +290,18 @@ class CoverageAssignment:
         assignments[deepest] = "deep_center"
         coverage_defenders.remove(deepest)
 
-        # Remaining defenders get man assignments
+        # Get receivers for man coverage (excluding CENTER unless in progression)
         receivers = [r for r in self.offensive_receivers if r != Role.CENTER]
 
-        for i, defender in enumerate(sorted(coverage_defenders, key=lambda d: self.initial_positions[d].y)):
-            if i < len(receivers):
-                assignments[defender] = receivers[i]
-            else:
-                # Extra defender plays zone
+        # Match remaining defenders to receivers by position
+        matches = self._match_defenders_to_receivers(coverage_defenders, receivers)
+
+        for defender, receiver in matches.items():
+            assignments[defender] = receiver
+
+        # Any remaining defenders cover CENTER or play zone
+        for defender in coverage_defenders:
+            if defender not in assignments:
                 if Role.CENTER in self.offensive_receivers:
                     assignments[defender] = Role.CENTER
                 else:
@@ -210,7 +331,7 @@ class CoverageAssignment:
 
         for d in coverage_defenders:
             pos = self.initial_positions[d]
-            if pos.x >= 12.0:  # Deep player
+            if pos.x >= 10.0:  # Deep player
                 deep_defenders.append(d)
             else:
                 underneath_defenders.append(d)
@@ -285,6 +406,39 @@ class CoverageAssignment:
             assignments[d] = zones[i] if i < len(zones) else "middle_hook"
 
         return assignments
+
+    def get_adjusted_start_positions(
+        self,
+        receiver_positions: Dict[Role, Point2D]
+    ) -> Dict[Role, Point2D]:
+        """
+        Get defender start positions adjusted for man coverage.
+        Man defenders start directly in front of their assigned receiver.
+        """
+        adjusted = {}
+
+        for def_role, pos in self.initial_positions.items():
+            assignment = self.assignments.get(def_role)
+
+            if assignment is None:
+                # Rusher - use original position
+                adjusted[def_role] = pos
+            elif isinstance(assignment, Role):
+                # Man coverage - position in front of receiver
+                if assignment in receiver_positions:
+                    rec_pos = receiver_positions[assignment]
+                    # Position 2 yards in front (x) at same lateral position (y)
+                    adjusted[def_role] = Point2D(
+                        x=max(1.0, pos.x),  # Keep original depth
+                        y=rec_pos.y  # Match receiver's lateral position
+                    )
+                else:
+                    adjusted[def_role] = pos
+            else:
+                # Zone - use original position
+                adjusted[def_role] = pos
+
+        return adjusted
 
 
 def get_rusher_start_position(

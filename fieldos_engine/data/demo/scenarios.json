@@ -23,14 +23,14 @@
       "type": "ZONE",
       "shell": "COVER2",
       "rushers_count": 0,
-      "notes": "Two high safeties (deep halves), 3 underneath zones - no rush"
+      "notes": "Two high safeties at 12-15 yards (deep halves), 3 underneath zones at 5-7 yards"
     },
     "defender_start_positions": {
-      "D1": {"x": 1.0, "y": -12.0},
-      "D2": {"x": 15.0, "y": -8.0},
-      "D3": {"x": 2.0, "y": 0.0},
-      "D4": {"x": 15.0, "y": 8.0},
-      "D5": {"x": 1.0, "y": 12.0}
+      "D1": {"x": 5.0, "y": -10.0},
+      "D2": {"x": 12.0, "y": -8.0},
+      "D3": {"x": 6.0, "y": 0.0},
+      "D4": {"x": 12.0, "y": 8.0},
+      "D5": {"x": 5.0, "y": 10.0}
     },
     "randomness": {
       "position_jitter_yards": 0.5,
@@ -62,14 +62,14 @@
       "shell": "COVER1",
       "rushers_count": 1,
       "rusher_position": "CENTER",
-      "notes": "2 underneath, 2 deep corners, MLB rushes from center"
+      "notes": "2-2 box with MLB rushing - 2 underneath at 5-6 yards, 2 deep at 12 yards, middle is OPEN"
     },
     "defender_start_positions": {
-      "D1": {"x": 2.0, "y": -10.0},
-      "D2": {"x": 12.0, "y": -8.0},
+      "D1": {"x": 5.0, "y": -8.0},
+      "D2": {"x": 12.0, "y": -7.0},
       "D3": {"x": 7.0, "y": 0.0},
-      "D4": {"x": 12.0, "y": 8.0},
-      "D5": {"x": 2.0, "y": 10.0}
+      "D4": {"x": 12.0, "y": 7.0},
+      "D5": {"x": 5.0, "y": 8.0}
     },
     "randomness": {
       "position_jitter_yards": 0.5,
@@ -100,14 +100,14 @@
       "type": "ZONE",
       "shell": "COVER3",
       "rushers_count": 0,
-      "notes": "1 deep safety (center third), 4 underneath with corners dropping to help"
+      "notes": "1 deep safety at 15 yards (center third), 4 underneath - corners at 6 yards drop to help"
     },
     "defender_start_positions": {
-      "D1": {"x": 3.0, "y": -12.0},
-      "D2": {"x": 3.0, "y": -5.0},
+      "D1": {"x": 6.0, "y": -12.0},
+      "D2": {"x": 6.0, "y": -5.0},
       "D3": {"x": 15.0, "y": 0.0},
-      "D4": {"x": 3.0, "y": 5.0},
-      "D5": {"x": 3.0, "y": 12.0}
+      "D4": {"x": 6.0, "y": 5.0},
+      "D5": {"x": 6.0, "y": 12.0}
     },
     "randomness": {
       "position_jitter_yards": 0.5,
@@ -138,14 +138,14 @@
       "type": "MAN",
       "shell": "COVER1",
       "rushers_count": 1,
-      "notes": "3 man on WRs, 1 deep safety, 1 rusher"
+      "notes": "3 man on WRs (positioned in front of receivers), 1 deep safety at 12 yards, 1 rusher"
     },
     "defender_start_positions": {
-      "D1": {"x": 1.0, "y": -10.0},
-      "D2": {"x": 1.0, "y": -5.0},
+      "D1": {"x": 2.0, "y": 10.0},
+      "D2": {"x": 2.0, "y": 7.0},
       "D3": {"x": 7.0, "y": 0.0},
       "D4": {"x": 12.0, "y": 0.0},
-      "D5": {"x": 1.0, "y": 10.0}
+      "D5": {"x": 2.0, "y": 4.0}
     },
     "randomness": {
       "position_jitter_yards": 0.5,
@@ -176,14 +176,14 @@
       "type": "MAN",
       "shell": "COVER1",
       "rushers_count": 0,
-      "notes": "3 man on WRs, 1 zone LB in middle, 1 deep safety"
+      "notes": "3 man on WRs (in front of receivers), 1 zone LB at 6 yards middle, 1 deep safety at 12 yards"
     },
     "defender_start_positions": {
-      "D1": {"x": 1.0, "y": -10.0},
-      "D2": {"x": 1.0, "y": -4.0},
-      "D3": {"x": 5.0, "y": 0.0},
-      "D4": {"x": 15.0, "y": 0.0},
-      "D5": {"x": 1.0, "y": 10.0}
+      "D1": {"x": 2.0, "y": 10.0},
+      "D2": {"x": 6.0, "y": 0.0},
+      "D3": {"x": 12.0, "y": 0.0},
+      "D4": {"x": 2.0, "y": 7.0},
+      "D5": {"x": 2.0, "y": 4.0}
     },
     "randomness": {
       "position_jitter_yards": 0.5,
@@ -214,14 +214,14 @@
       "type": "ZONE",
       "shell": "COVER1",
       "rushers_count": 1,
-      "notes": "3 underneath zones, 1 deep safety, 1 rusher"
+      "notes": "3 underneath zones at 5-6 yards, 1 deep safety at 14 yards, 1 rusher"
     },
     "defender_start_positions": {
-      "D1": {"x": 2.0, "y": -10.0},
-      "D2": {"x": 2.0, "y": 0.0},
+      "D1": {"x": 5.0, "y": -10.0},
+      "D2": {"x": 5.0, "y": 0.0},
       "D3": {"x": 7.0, "y": 0.0},
-      "D4": {"x": 15.0, "y": 0.0},
-      "D5": {"x": 2.0, "y": 10.0}
+      "D4": {"x": 14.0, "y": 0.0},
+      "D5": {"x": 5.0, "y": 10.0}
     },
     "randomness": {
       "position_jitter_yards": 0.5,
@@ -252,14 +252,14 @@
       "type": "MAN",
       "shell": "COVER0",
       "rushers_count": 0,
-      "notes": "Pure man coverage, all 5 in man, no safety help"
+      "notes": "Pure man coverage - all 5 defenders man up on receivers (in front of them), no safety help"
     },
     "defender_start_positions": {
-      "D1": {"x": 1.0, "y": -10.0},
-      "D2": {"x": 1.0, "y": -4.0},
-      "D3": {"x": 1.0, "y": 0.0},
-      "D4": {"x": 1.0, "y": 4.0},
-      "D5": {"x": 1.0, "y": 10.0}
+      "D1": {"x": 2.0, "y": 10.0},
+      "D2": {"x": 2.0, "y": 7.0},
+      "D3": {"x": 2.0, "y": 0.0},
+      "D4": {"x": 2.0, "y": 4.0},
+      "D5": {"x": 2.0, "y": -10.0}
     },
     "randomness": {
       "position_jitter_yards": 0.5,
@@ -290,14 +290,14 @@
       "type": "MAN",
       "shell": "COVER1",
       "rushers_count": 1,
-      "notes": "Tight man in redzone with rush and safety help"
+      "notes": "Tight man in redzone - defenders press at 1 yard in front of receivers, safety at 8 yards"
     },
     "defender_start_positions": {
-      "D1": {"x": 0.0, "y": -8.0},
-      "D2": {"x": 0.0, "y": -3.0},
+      "D1": {"x": 1.0, "y": 10.0},
+      "D2": {"x": 1.0, "y": 7.0},
       "D3": {"x": 7.0, "y": 0.0},
       "D4": {"x": 8.0, "y": 0.0},
-      "D5": {"x": 0.0, "y": 8.0}
+      "D5": {"x": 1.0, "y": 4.0}
     },
     "randomness": {
       "position_jitter_yards": 0.3,

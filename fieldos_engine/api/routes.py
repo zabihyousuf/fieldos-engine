@@ -508,6 +508,15 @@ def _get_default_offensive_players(play) -> Dict[Role, Any]:
         if player:
             players[role] = player
 
+    # Validate we found all required players
+    required_roles = {slot.role for slot in play.formation.slots}
+    missing_roles = required_roles - set(players.keys())
+    if missing_roles:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Missing players for roles: {', '.join(r.value for r in missing_roles)}"
+        )
+
     return players
 
 
@@ -521,6 +530,14 @@ def _get_default_defensive_players() -> Dict[Role, Any]:
         player = next((p for p in all_players if p.role == role), None)
         if player:
             players[role] = player
+
+    # Validate we found all required players
+    missing_roles = set(def_roles) - set(players.keys())
+    if missing_roles:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Missing defensive players for roles: {', '.join(r.value for r in missing_roles)}"
+        )
 
     return players
 

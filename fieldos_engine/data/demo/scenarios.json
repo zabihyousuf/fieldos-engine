@@ -1,6 +1,235 @@
 [
   {
-    "id": "scenario_man_cover0",
+    "id": "scenario_cover2_no_rush",
+    "name": "Cover 2 (3-2 No Rush)",
+    "field": {
+      "width_yards": 40.0,
+      "total_length_yards": 80.0,
+      "endzone_depth_yards": 10.0,
+      "no_run_zone_depth_yards": 5.0
+    },
+    "rules": {
+      "id": "rules_standard",
+      "name": "Standard 5v5",
+      "players_per_side": 5,
+      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
+      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
+      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
+      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
+      "motion": {"allow_motion": true, "lateral_only": true},
+      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
+    },
+    "defense_call": {
+      "type": "ZONE",
+      "shell": "COVER2",
+      "rushers_count": 0,
+      "notes": "Two high safeties (deep halves), 3 underneath zones - no rush"
+    },
+    "defender_start_positions": {
+      "D1": {"x": 1.0, "y": -12.0},
+      "D2": {"x": 15.0, "y": -8.0},
+      "D3": {"x": 2.0, "y": 0.0},
+      "D4": {"x": 15.0, "y": 8.0},
+      "D5": {"x": 1.0, "y": 12.0}
+    },
+    "randomness": {
+      "position_jitter_yards": 0.5,
+      "reaction_jitter_ms": 50.0
+    }
+  },
+  {
+    "id": "scenario_cover1_mlb_rush",
+    "name": "Cover 1 (2-2 MLB Rush)",
+    "field": {
+      "width_yards": 40.0,
+      "total_length_yards": 80.0,
+      "endzone_depth_yards": 10.0,
+      "no_run_zone_depth_yards": 5.0
+    },
+    "rules": {
+      "id": "rules_standard",
+      "name": "Standard 5v5",
+      "players_per_side": 5,
+      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
+      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
+      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
+      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
+      "motion": {"allow_motion": true, "lateral_only": true},
+      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
+    },
+    "defense_call": {
+      "type": "ZONE",
+      "shell": "COVER1",
+      "rushers_count": 1,
+      "rusher_position": "CENTER",
+      "notes": "2 underneath, 2 deep corners, MLB rushes from center"
+    },
+    "defender_start_positions": {
+      "D1": {"x": 2.0, "y": -10.0},
+      "D2": {"x": 12.0, "y": -8.0},
+      "D3": {"x": 7.0, "y": 0.0},
+      "D4": {"x": 12.0, "y": 8.0},
+      "D5": {"x": 2.0, "y": 10.0}
+    },
+    "randomness": {
+      "position_jitter_yards": 0.5,
+      "reaction_jitter_ms": 50.0
+    }
+  },
+  {
+    "id": "scenario_cover3_no_rush",
+    "name": "Cover 3 (4-1 No Rush)",
+    "field": {
+      "width_yards": 40.0,
+      "total_length_yards": 80.0,
+      "endzone_depth_yards": 10.0,
+      "no_run_zone_depth_yards": 5.0
+    },
+    "rules": {
+      "id": "rules_standard",
+      "name": "Standard 5v5",
+      "players_per_side": 5,
+      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
+      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
+      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
+      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
+      "motion": {"allow_motion": true, "lateral_only": true},
+      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
+    },
+    "defense_call": {
+      "type": "ZONE",
+      "shell": "COVER3",
+      "rushers_count": 0,
+      "notes": "1 deep safety (center third), 4 underneath with corners dropping to help"
+    },
+    "defender_start_positions": {
+      "D1": {"x": 3.0, "y": -12.0},
+      "D2": {"x": 3.0, "y": -5.0},
+      "D3": {"x": 15.0, "y": 0.0},
+      "D4": {"x": 3.0, "y": 5.0},
+      "D5": {"x": 3.0, "y": 12.0}
+    },
+    "randomness": {
+      "position_jitter_yards": 0.5,
+      "reaction_jitter_ms": 50.0
+    }
+  },
+  {
+    "id": "scenario_man_with_rush",
+    "name": "Man Coverage (With Rush)",
+    "field": {
+      "width_yards": 40.0,
+      "total_length_yards": 80.0,
+      "endzone_depth_yards": 10.0,
+      "no_run_zone_depth_yards": 5.0
+    },
+    "rules": {
+      "id": "rules_standard",
+      "name": "Standard 5v5",
+      "players_per_side": 5,
+      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
+      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
+      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
+      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
+      "motion": {"allow_motion": true, "lateral_only": true},
+      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
+    },
+    "defense_call": {
+      "type": "MAN",
+      "shell": "COVER1",
+      "rushers_count": 1,
+      "notes": "3 man on WRs, 1 deep safety, 1 rusher"
+    },
+    "defender_start_positions": {
+      "D1": {"x": 1.0, "y": -10.0},
+      "D2": {"x": 1.0, "y": -5.0},
+      "D3": {"x": 7.0, "y": 0.0},
+      "D4": {"x": 12.0, "y": 0.0},
+      "D5": {"x": 1.0, "y": 10.0}
+    },
+    "randomness": {
+      "position_jitter_yards": 0.5,
+      "reaction_jitter_ms": 50.0
+    }
+  },
+  {
+    "id": "scenario_man_zone_lb_no_rush",
+    "name": "Man + Zone LB (No Rush)",
+    "field": {
+      "width_yards": 40.0,
+      "total_length_yards": 80.0,
+      "endzone_depth_yards": 10.0,
+      "no_run_zone_depth_yards": 5.0
+    },
+    "rules": {
+      "id": "rules_standard",
+      "name": "Standard 5v5",
+      "players_per_side": 5,
+      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
+      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
+      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
+      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
+      "motion": {"allow_motion": true, "lateral_only": true},
+      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
+    },
+    "defense_call": {
+      "type": "MAN",
+      "shell": "COVER1",
+      "rushers_count": 0,
+      "notes": "3 man on WRs, 1 zone LB in middle, 1 deep safety"
+    },
+    "defender_start_positions": {
+      "D1": {"x": 1.0, "y": -10.0},
+      "D2": {"x": 1.0, "y": -4.0},
+      "D3": {"x": 5.0, "y": 0.0},
+      "D4": {"x": 15.0, "y": 0.0},
+      "D5": {"x": 1.0, "y": 10.0}
+    },
+    "randomness": {
+      "position_jitter_yards": 0.5,
+      "reaction_jitter_ms": 50.0
+    }
+  },
+  {
+    "id": "scenario_3_1_with_rush",
+    "name": "3-1 Zone (With Rush)",
+    "field": {
+      "width_yards": 40.0,
+      "total_length_yards": 80.0,
+      "endzone_depth_yards": 10.0,
+      "no_run_zone_depth_yards": 5.0
+    },
+    "rules": {
+      "id": "rules_standard",
+      "name": "Standard 5v5",
+      "players_per_side": 5,
+      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
+      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
+      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
+      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
+      "motion": {"allow_motion": true, "lateral_only": true},
+      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
+    },
+    "defense_call": {
+      "type": "ZONE",
+      "shell": "COVER1",
+      "rushers_count": 1,
+      "notes": "3 underneath zones, 1 deep safety, 1 rusher"
+    },
+    "defender_start_positions": {
+      "D1": {"x": 2.0, "y": -10.0},
+      "D2": {"x": 2.0, "y": 0.0},
+      "D3": {"x": 7.0, "y": 0.0},
+      "D4": {"x": 15.0, "y": 0.0},
+      "D5": {"x": 2.0, "y": 10.0}
+    },
+    "randomness": {
+      "position_jitter_yards": 0.5,
+      "reaction_jitter_ms": 50.0
+    }
+  },
+  {
+    "id": "scenario_man_cover0_no_rush",
     "name": "Man Cover 0 (No Rush)",
     "field": {
       "width_yards": 40.0,
@@ -23,14 +252,14 @@
       "type": "MAN",
       "shell": "COVER0",
       "rushers_count": 0,
-      "notes": "Pure man coverage, no rush, all 5 in coverage"
+      "notes": "Pure man coverage, all 5 in man, no safety help"
     },
     "defender_start_positions": {
-      "CB1": {"x": 0.0, "y": 10.0},
-      "CB2": {"x": 0.0, "y": -10.0},
-      "SAFETY": {"x": -2.0, "y": 0.0},
-      "LB": {"x": -1.0, "y": 5.0},
-      "RUSHER": {"x": -7.0, "y": 0.0}
+      "D1": {"x": 1.0, "y": -10.0},
+      "D2": {"x": 1.0, "y": -4.0},
+      "D3": {"x": 1.0, "y": 0.0},
+      "D4": {"x": 1.0, "y": 4.0},
+      "D5": {"x": 1.0, "y": 10.0}
     },
     "randomness": {
       "position_jitter_yards": 0.5,
@@ -38,8 +267,8 @@
     }
   },
   {
-    "id": "scenario_man_cover1_1rush",
-    "name": "Man Cover 1 (1 Rush)",
+    "id": "scenario_redzone_tight_man",
+    "name": "Redzone Tight Man",
     "field": {
       "width_yards": 40.0,
       "total_length_yards": 80.0,
@@ -61,246 +290,18 @@
       "type": "MAN",
       "shell": "COVER1",
       "rushers_count": 1,
-      "notes": "Man coverage with 1 deep safety, 1 rusher"
+      "notes": "Tight man in redzone with rush and safety help"
     },
     "defender_start_positions": {
-      "CB1": {"x": 0.0, "y": 10.0},
-      "CB2": {"x": 0.0, "y": -10.0},
-      "SAFETY": {"x": 15.0, "y": 0.0},
-      "LB": {"x": -1.0, "y": 5.0},
-      "RUSHER": {"x": -7.0, "y": 0.0}
-    },
-    "randomness": {
-      "position_jitter_yards": 0.5,
-      "reaction_jitter_ms": 50.0
-    }
-  },
-  {
-    "id": "scenario_zone_cover2",
-    "name": "Zone Cover 2",
-    "field": {
-      "width_yards": 40.0,
-      "total_length_yards": 80.0,
-      "endzone_depth_yards": 10.0,
-      "no_run_zone_depth_yards": 5.0
-    },
-    "rules": {
-      "id": "rules_standard",
-      "name": "Standard 5v5",
-      "players_per_side": 5,
-      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
-      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
-      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
-      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
-      "motion": {"allow_motion": true, "lateral_only": true},
-      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
-    },
-    "defense_call": {
-      "type": "ZONE",
-      "shell": "COVER2",
-      "rushers_count": 1,
-      "notes": "2 deep halves, 3 underneath zones"
-    },
-    "defender_start_positions": {
-      "CB1": {"x": 12.0, "y": 10.0},
-      "CB2": {"x": 12.0, "y": -10.0},
-      "SAFETY": {"x": 5.0, "y": 0.0},
-      "LB": {"x": 0.0, "y": 5.0},
-      "RUSHER": {"x": -7.0, "y": 0.0}
-    },
-    "randomness": {
-      "position_jitter_yards": 0.5,
-      "reaction_jitter_ms": 50.0
-    }
-  },
-  {
-    "id": "scenario_zone_cover3",
-    "name": "Zone Cover 3",
-    "field": {
-      "width_yards": 40.0,
-      "total_length_yards": 80.0,
-      "endzone_depth_yards": 10.0,
-      "no_run_zone_depth_yards": 5.0
-    },
-    "rules": {
-      "id": "rules_standard",
-      "name": "Standard 5v5",
-      "players_per_side": 5,
-      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
-      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
-      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
-      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
-      "motion": {"allow_motion": true, "lateral_only": true},
-      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
-    },
-    "defense_call": {
-      "type": "ZONE",
-      "shell": "COVER3",
-      "rushers_count": 1,
-      "notes": "3 deep thirds, 2 underneath"
-    },
-    "defender_start_positions": {
-      "CB1": {"x": 12.0, "y": 12.0},
-      "CB2": {"x": 12.0, "y": -12.0},
-      "SAFETY": {"x": 15.0, "y": 0.0},
-      "LB": {"x": 2.0, "y": 0.0},
-      "RUSHER": {"x": -7.0, "y": 0.0}
-    },
-    "randomness": {
-      "position_jitter_yards": 0.5,
-      "reaction_jitter_ms": 50.0
-    }
-  },
-  {
-    "id": "scenario_3rd_short_man",
-    "name": "3rd & Short - Man",
-    "field": {
-      "width_yards": 40.0,
-      "total_length_yards": 80.0,
-      "endzone_depth_yards": 10.0,
-      "no_run_zone_depth_yards": 5.0
-    },
-    "rules": {
-      "id": "rules_standard",
-      "name": "Standard 5v5",
-      "players_per_side": 5,
-      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
-      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
-      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
-      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
-      "motion": {"allow_motion": true, "lateral_only": true},
-      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
-    },
-    "defense_call": {
-      "type": "MAN",
-      "shell": "COVER0",
-      "rushers_count": 1,
-      "notes": "Tight man on 3rd & short"
-    },
-    "defender_start_positions": {
-      "CB1": {"x": 0.0, "y": 9.0},
-      "CB2": {"x": 0.0, "y": -9.0},
-      "SAFETY": {"x": -1.0, "y": 0.0},
-      "LB": {"x": -1.0, "y": 4.0},
-      "RUSHER": {"x": -7.0, "y": 0.0}
+      "D1": {"x": 0.0, "y": -8.0},
+      "D2": {"x": 0.0, "y": -3.0},
+      "D3": {"x": 7.0, "y": 0.0},
+      "D4": {"x": 8.0, "y": 0.0},
+      "D5": {"x": 0.0, "y": 8.0}
     },
     "randomness": {
       "position_jitter_yards": 0.3,
       "reaction_jitter_ms": 40.0
-    }
-  },
-  {
-    "id": "scenario_3rd_long_zone",
-    "name": "3rd & Long - Zone",
-    "field": {
-      "width_yards": 40.0,
-      "total_length_yards": 80.0,
-      "endzone_depth_yards": 10.0,
-      "no_run_zone_depth_yards": 5.0
-    },
-    "rules": {
-      "id": "rules_standard",
-      "name": "Standard 5v5",
-      "players_per_side": 5,
-      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
-      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
-      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
-      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
-      "motion": {"allow_motion": true, "lateral_only": true},
-      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
-    },
-    "defense_call": {
-      "type": "ZONE",
-      "shell": "COVER3",
-      "rushers_count": 1,
-      "notes": "Deep zones on 3rd & long"
-    },
-    "defender_start_positions": {
-      "CB1": {"x": 15.0, "y": 12.0},
-      "CB2": {"x": 15.0, "y": -12.0},
-      "SAFETY": {"x": 18.0, "y": 0.0},
-      "LB": {"x": 8.0, "y": 0.0},
-      "RUSHER": {"x": -7.0, "y": 0.0}
-    },
-    "randomness": {
-      "position_jitter_yards": 0.5,
-      "reaction_jitter_ms": 50.0
-    }
-  },
-  {
-    "id": "scenario_redzone_man",
-    "name": "Redzone - Man",
-    "field": {
-      "width_yards": 40.0,
-      "total_length_yards": 80.0,
-      "endzone_depth_yards": 10.0,
-      "no_run_zone_depth_yards": 5.0
-    },
-    "rules": {
-      "id": "rules_standard",
-      "name": "Standard 5v5",
-      "players_per_side": 5,
-      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
-      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
-      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
-      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
-      "motion": {"allow_motion": true, "lateral_only": true},
-      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
-    },
-    "defense_call": {
-      "type": "MAN",
-      "shell": "COVER1",
-      "rushers_count": 1,
-      "notes": "Tight man in redzone"
-    },
-    "defender_start_positions": {
-      "CB1": {"x": 0.0, "y": 8.0},
-      "CB2": {"x": 0.0, "y": -8.0},
-      "SAFETY": {"x": 10.0, "y": 0.0},
-      "LB": {"x": -1.0, "y": 3.0},
-      "RUSHER": {"x": -7.0, "y": 0.0}
-    },
-    "randomness": {
-      "position_jitter_yards": 0.3,
-      "reaction_jitter_ms": 40.0
-    }
-  },
-  {
-    "id": "scenario_goalline_cover0",
-    "name": "Goalline - Cover 0",
-    "field": {
-      "width_yards": 40.0,
-      "total_length_yards": 80.0,
-      "endzone_depth_yards": 10.0,
-      "no_run_zone_depth_yards": 5.0
-    },
-    "rules": {
-      "id": "rules_standard",
-      "name": "Standard 5v5",
-      "players_per_side": 5,
-      "field": {"width_yards": 40.0, "total_length_yards": 80.0, "endzone_depth_yards": 10.0, "no_run_zone_depth_yards": 5.0},
-      "downs": {"use_midfield_line_to_gain": true, "line_to_gain_yards": 25.0, "reset_at_midfield": true, "downs_to_convert": 3},
-      "no_run_zone": {"enabled": true, "depth_from_goal_yards": 5.0},
-      "rush": {"rusher_distance_yards": 7.0, "rush_delay_seconds": 0.0, "max_rushers": 1, "qb_can_run": false},
-      "motion": {"allow_motion": true, "lateral_only": true},
-      "scoring": {"td_points": 6, "xp1_points": 1, "xp2_points": 2, "safety_points": 2}
-    },
-    "defense_call": {
-      "type": "MAN",
-      "shell": "COVER0",
-      "rushers_count": 1,
-      "notes": "All-out man on goalline"
-    },
-    "defender_start_positions": {
-      "CB1": {"x": 0.0, "y": 6.0},
-      "CB2": {"x": 0.0, "y": -6.0},
-      "SAFETY": {"x": -1.0, "y": 0.0},
-      "LB": {"x": -1.0, "y": 3.0},
-      "RUSHER": {"x": -7.0, "y": 0.0}
-    },
-    "randomness": {
-      "position_jitter_yards": 0.2,
-      "reaction_jitter_ms": 30.0
     }
   }
 ]

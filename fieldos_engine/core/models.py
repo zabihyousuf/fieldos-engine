@@ -22,12 +22,27 @@ class Role(str, Enum):
     WR2 = "WR2"
     WR3 = "WR3"
 
-    # Defense
+    # Defense - 5 defenders for 5v5 flag football
+    # D1-D5 are generic defender slots that can be assigned different roles
+    D1 = "D1"  # Typically outside left (corner/flat)
+    D2 = "D2"  # Typically inside left (LB/hook)
+    D3 = "D3"  # Typically middle (MLB/rusher/safety)
+    D4 = "D4"  # Typically inside right (LB/hook)
+    D5 = "D5"  # Typically outside right (corner/flat)
+
+    # Legacy roles for backward compatibility
     RUSHER = "RUSHER"
     CB1 = "CB1"
     CB2 = "CB2"
     SAFETY = "SAFETY"
     LB = "LB"
+
+
+class RusherPosition(str, Enum):
+    """Position where the rusher lines up."""
+    LEFT = "LEFT"
+    CENTER = "CENTER"
+    RIGHT = "RIGHT"
 
 
 class CoverageShell(str, Enum):
@@ -196,7 +211,11 @@ class Player(BaseModel):
     def validate_side_role_match(self):
         """Ensure role matches side."""
         offense_roles = {Role.QB, Role.CENTER, Role.WR1, Role.WR2, Role.WR3}
-        defense_roles = {Role.RUSHER, Role.CB1, Role.CB2, Role.SAFETY, Role.LB}
+        # Support both new D1-D5 roles and legacy roles
+        defense_roles = {
+            Role.D1, Role.D2, Role.D3, Role.D4, Role.D5,
+            Role.RUSHER, Role.CB1, Role.CB2, Role.SAFETY, Role.LB
+        }
 
         if self.side == Side.OFFENSE and self.role not in offense_roles:
             raise ValueError(f"Offense player cannot have role {self.role}")
@@ -297,11 +316,12 @@ class QBPlan(BaseModel):
     @field_validator('progression_roles')
     @classmethod
     def validate_receiver_roles(cls, v: List[Role]) -> List[Role]:
-        """Ensure progression only includes receiver roles."""
-        receiver_roles = {Role.WR1, Role.WR2, Role.WR3}
+        """Ensure progression only includes eligible receiver roles."""
+        # CENTER can run routes after snapping the ball (common in flag football)
+        receiver_roles = {Role.WR1, Role.WR2, Role.WR3, Role.CENTER}
         for role in v:
             if role not in receiver_roles:
-                raise ValueError(f"QB progression can only include WR roles, got {role}")
+                raise ValueError(f"QB progression can only include receiver roles (WR1, WR2, WR3, CENTER), got {role}")
         return v
 
 
@@ -339,7 +359,8 @@ class DefenseCall(BaseModel):
     """Defensive coverage and rush configuration."""
     type: CoverageType
     shell: CoverageShell
-    rushers_count: int = Field(ge=0, le=4)
+    rushers_count: int = Field(ge=0, le=1)  # 5v5 typically has 0 or 1 rusher
+    rusher_position: Optional[RusherPosition] = None  # L/C/R - randomized if None
     notes: Optional[str] = None
 
 
@@ -362,7 +383,11 @@ class Scenario(BaseModel):
     @model_validator(mode='after')
     def validate_defender_positions(self):
         """Ensure defender positions are for defensive roles only."""
-        defense_roles = {Role.RUSHER, Role.CB1, Role.CB2, Role.SAFETY, Role.LB}
+        # New D1-D5 roles plus legacy roles for backward compatibility
+        defense_roles = {
+            Role.D1, Role.D2, Role.D3, Role.D4, Role.D5,
+            Role.RUSHER, Role.CB1, Role.CB2, Role.SAFETY, Role.LB
+        }
 
         for role in self.defender_start_positions:
             if role not in defense_roles:

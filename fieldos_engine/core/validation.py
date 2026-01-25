@@ -99,7 +99,11 @@ def validate_scenario(scenario: Scenario) -> None:
     - All defender roles are defensive
     - Positions are on field
     """
-    defense_roles = {Role.RUSHER, Role.CB1, Role.CB2, Role.SAFETY, Role.LB}
+    # Support both new D1-D5 roles and legacy roles
+    defense_roles = {
+        Role.D1, Role.D2, Role.D3, Role.D4, Role.D5,
+        Role.RUSHER, Role.CB1, Role.CB2, Role.SAFETY, Role.LB
+    }
 
     if len(scenario.defender_start_positions) != 5:
         raise ValidationError(
@@ -119,16 +123,6 @@ def validate_scenario(scenario: Scenario) -> None:
                 f"outside field width"
             )
 
-    # Note: We allow RUSHER role even when rushers_count=0 (they just won't rush)
-    # This is common in real football - a "rusher" position that sometimes drops into coverage
-    rusher_count = sum(1 for role in scenario.defender_start_positions if role == Role.RUSHER)
-    if rusher_count > scenario.defense_call.rushers_count:
-        # Strict validation: cannot have more rushers than the call specifies
-        raise ValidationError(
-            f"Scenario {scenario.id} has {rusher_count} RUSHER positions but only "
-            f"{scenario.defense_call.rushers_count} rushers in defense_call"
-        )
-
 
 def validate_player(player: Player) -> None:
     """
@@ -137,7 +131,11 @@ def validate_player(player: Player) -> None:
     - Attributes in valid ranges (Pydantic handles this)
     """
     offense_roles = {Role.QB, Role.CENTER, Role.WR1, Role.WR2, Role.WR3}
-    defense_roles = {Role.RUSHER, Role.CB1, Role.CB2, Role.SAFETY, Role.LB}
+    # Support both new D1-D5 roles and legacy roles
+    defense_roles = {
+        Role.D1, Role.D2, Role.D3, Role.D4, Role.D5,
+        Role.RUSHER, Role.CB1, Role.CB2, Role.SAFETY, Role.LB
+    }
 
     if player.side == Side.OFFENSE and player.role not in offense_roles:
         raise ValidationError(f"Player {player.id} is OFFENSE but has role {player.role}")

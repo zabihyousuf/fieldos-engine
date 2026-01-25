@@ -57,3 +57,6 @@ logs/
 # Environment
 .env
 .env.local
+
+# Snyk Security Extension - AI Rules (auto-generated)
+.agent/rules/snyk_rules.md

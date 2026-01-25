@@ -29,6 +29,9 @@ class SimulationState:
     defensive_positions: Dict[Role, Tuple[float, float]]
     qb_position: Tuple[float, float]
     rusher_position: Optional[Tuple[float, float]] = None
+    ball_position: Optional[Tuple[float, float]] = None
+    ball_in_flight: bool = False
+    throw_target: Optional[Role] = None
 
 
 @dataclass
@@ -80,19 +83,24 @@ class SimulationEngine:
         # Validate inputs
         validate_all_before_sim(play, scenario, offensive_players, defensive_players)
 
-        # Initialize
-        field = FieldCoordinates(scenario.field)
+        # Initialize coverage assignments
         coverage = CoverageAssignment(
             scenario.defense_call,
             scenario.defender_start_positions,
-            list(play.qb_plan.progression_roles)
+            list(play.qb_plan.progression_roles),
+            rng=self.rng
         )
+
+        # Get the rusher role (if any) from coverage
+        rusher_role = coverage.rusher_role
+
+        # Initialize field
+        field_coords = FieldCoordinates(scenario.field)
 
         # Get players
         qb_player = offensive_players[Role.QB]
-        qb_slot = next(s for s in play.formation.slots if s.role == Role.QB)
 
-        # Initial positions
+        # Initial offensive positions
         off_positions = {
             slot.role: (
                 slot.position.x + self.rng.normal(0, scenario.randomness.position_jitter_yards),
@@ -101,6 +109,7 @@ class SimulationEngine:
             for slot in play.formation.slots
         }
 
+        # Initial defensive positions
         def_positions = {
             role: (
                 pos.x + self.rng.normal(0, scenario.randomness.position_jitter_yards),
@@ -110,7 +119,7 @@ class SimulationEngine:
         }
 
         # Simulation loop
-        max_time = play.qb_plan.max_time_to_throw_ms + 500.0  # buffer
+        max_time = play.qb_plan.max_time_to_throw_ms + 1500.0  # extra buffer for ball flight
         current_time = 0.0
         states = [] if record_trace else None
         events = [] if record_trace else None
@@ -122,14 +131,21 @@ class SimulationEngine:
         throw_time = None
         throw_target = None
         throw_decision_made = False
+        ball_in_flight = False
+        ball_position = None
+        catch_time = None
 
-        # Simulation loop
+        # Simulation loop - continues until play ends or max time
         while current_time <= max_time:
             # Update offensive positions (run routes)
             for role, route in play.assignments.items():
                 if route is not None and role in off_positions:
-                    player = offensive_players[role]
-                    start_pos = next(s.position for s in play.formation.slots if s.role == role)
+                    player = offensive_players.get(role)
+                    if player is None:
+                        continue
+                    start_pos = next((s.position for s in play.formation.slots if s.role == role), None)
+                    if start_pos is None:
+                        continue
                     new_pos = interpolate_route(
                         route,
                         start_pos,
@@ -145,15 +161,17 @@ class SimulationEngine:
                 if role in play.qb_plan.progression_roles
             }
 
-            for def_role, def_pos in def_positions.items():
-                if def_role == Role.RUSHER:
-                    # Handle rusher separately
-                    # Only rush if defense call mandates it
-                    if current_time >= rush_start_time and scenario.defense_call.rushers_count > 0:
+            for def_role, def_pos in list(def_positions.items()):
+                # Check if this defender is the rusher
+                if def_role == rusher_role and scenario.defense_call.rushers_count > 0:
+                    # Handle rusher
+                    if current_time >= rush_start_time:
                         rusher_started = True
                         # Move toward QB
                         qb_pos = off_positions[Role.QB]
-                        rusher_player = defensive_players[Role.RUSHER]
+                        rusher_player = defensive_players.get(def_role)
+                        if rusher_player is None:
+                            continue
 
                         dx = qb_pos[0] - def_pos[0]
                         dy = qb_pos[1] - def_pos[1]
@@ -172,7 +190,9 @@ class SimulationEngine:
                 else:
                     # Coverage defender
                     assignment = coverage.assignments.get(def_role)
-                    defender_player = defensive_players[def_role]
+                    defender_player = defensive_players.get(def_role)
+                    if defender_player is None:
+                        continue
                     new_pos = update_defender_position(
                         def_role,
                         def_pos,
@@ -185,10 +205,10 @@ class SimulationEngine:
                     )
                     def_positions[def_role] = new_pos
 
-            # Check for sack
-            if rusher_started and not throw_decision_made:
+            # Check for sack (only before throw)
+            if rusher_started and not throw_decision_made and rusher_role:
                 qb_pos = off_positions[Role.QB]
-                rusher_pos = def_positions.get(Role.RUSHER)
+                rusher_pos = def_positions.get(rusher_role)
                 if rusher_pos:
                     dx = qb_pos[0] - rusher_pos[0]
                     dy = qb_pos[1] - rusher_pos[1]
@@ -202,6 +222,18 @@ class SimulationEngine:
                             time_to_throw_ms=current_time,
                             failure_modes=[FailureMode.SACK_BEFORE_THROW]
                         )
+
+                        # Record final state
+                        if record_trace:
+                            states.append(SimulationState(
+                                time_ms=current_time,
+                                offensive_positions=off_positions.copy(),
+                                defensive_positions=def_positions.copy(),
+                                qb_position=off_positions[Role.QB],
+                                rusher_position=def_positions.get(rusher_role),
+                                ball_in_flight=False,
+                                throw_target=None
+                            ))
 
                         trace = None
                         if record_trace:
@@ -246,8 +278,60 @@ class SimulationEngine:
                             throw_time = current_time
                             throw_decision_made = True
 
-            # If throw made, simulate outcome
-            if throw_decision_made and throw_time is not None:
+                    # Calculate catch time when throw is made
+                    if throw_decision_made and throw_target is not None:
+                        qb_pos = off_positions[Role.QB]
+                        target_pos = off_positions[throw_target]
+                        distance = compute_throw_distance(qb_pos, target_pos)
+                        flight_time_ms = distance * 50.0  # ~1 yard per 50ms
+                        catch_time = throw_time + qb_player.attributes.release_time_ms + flight_time_ms
+                        ball_in_flight = True
+
+                        if record_trace and events is not None:
+                            events.append({
+                                'type': 'throw',
+                                'time_ms': throw_time,
+                                'target': throw_target.value,
+                                'distance': distance
+                            })
+
+            # Update ball position if in flight
+            if ball_in_flight and throw_time is not None and throw_target is not None and catch_time is not None:
+                qb_pos = off_positions[Role.QB]
+                target_pos = off_positions[throw_target]
+
+                # Interpolate ball position
+                release_time = throw_time + qb_player.attributes.release_time_ms
+                if current_time < release_time:
+                    # Ball still in QB's hand
+                    ball_position = qb_pos
+                elif current_time >= catch_time:
+                    # Ball reached target
+                    ball_position = target_pos
+                else:
+                    # Ball in flight - interpolate
+                    flight_progress = (current_time - release_time) / (catch_time - release_time)
+                    ball_position = (
+                        qb_pos[0] + flight_progress * (target_pos[0] - qb_pos[0]),
+                        qb_pos[1] + flight_progress * (target_pos[1] - qb_pos[1])
+                    )
+
+            # Record state
+            if record_trace:
+                states.append(SimulationState(
+                    time_ms=current_time,
+                    offensive_positions=off_positions.copy(),
+                    defensive_positions=def_positions.copy(),
+                    qb_position=off_positions[Role.QB],
+                    rusher_position=def_positions.get(rusher_role) if rusher_role else None,
+                    ball_position=ball_position,
+                    ball_in_flight=ball_in_flight,
+                    throw_target=throw_target
+                ))
+
+            # Check if ball has arrived (play ends)
+            if ball_in_flight and catch_time is not None and current_time >= catch_time:
+                # Simulate the throw outcome
                 outcome = self._simulate_throw(
                     throw_target,
                     throw_time,
@@ -258,8 +342,15 @@ class SimulationEngine:
                     defensive_players,
                     scenario,
                     play,
-                    field
+                    field_coords
                 )
+
+                if record_trace and events is not None:
+                    events.append({
+                        'type': 'catch_attempt',
+                        'time_ms': current_time,
+                        'outcome': outcome.outcome.value
+                    })
 
                 trace = None
                 if record_trace:
@@ -272,16 +363,6 @@ class SimulationEngine:
                     )
 
                 return outcome, trace
-
-            # Record state
-            if record_trace:
-                states.append(SimulationState(
-                    time_ms=current_time,
-                    offensive_positions=off_positions.copy(),
-                    defensive_positions=def_positions.copy(),
-                    qb_position=off_positions[Role.QB],
-                    rusher_position=def_positions.get(Role.RUSHER)
-                ))
 
             current_time += self.timestep_ms
 

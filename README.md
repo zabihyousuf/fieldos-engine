@@ -21,6 +21,7 @@ Built with proper ML engineering principles, the system is deterministic, reprod
 - Defensive coverages (Man, Zone, Cover 0/1/2/3)
 - Game situations (down/distance buckets: 1st down, 3rd & short, redzone, etc.)
 - Field configurations and rulesets
+- **CENTER can run routes** after snapping the ball (common in flag football)
 
 ### Simulation
 - Discrete-time simulation (50ms timesteps)
@@ -47,6 +48,455 @@ Built with proper ML engineering principles, the system is deterministic, reprod
 - `/train` - Train RL policies
 - `/evaluate` - Evaluate policy performance
 - Full error handling and validation
+
+---
+
+## UI Integration Guide
+
+This section documents how to build a frontend UI that allows users to create and manage plays, routes, formations, players, and scenarios.
+
+### Architecture for UI Integration
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (Future)                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐│
+│  │ Play     │  │ Route    │  │Formation │  │  Simulation      ││
+│  │ Designer │  │ Editor   │  │ Builder  │  │  Visualizer      ││
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────────┬─────────┘│
+│       │             │             │                  │          │
+│       └─────────────┴─────────────┴──────────────────┘          │
+│                              │                                   │
+│                         HTTP/JSON                                │
+└──────────────────────────────┼───────────────────────────────────┘
+                               │
+┌──────────────────────────────┼───────────────────────────────────┐
+│                     FIELDOS ENGINE API                           │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                     FastAPI Server                          ││
+│  │  /plays  /routes  /formations  /players  /scenarios         ││
+│  │  /simulate  /train  /evaluate  /seed-demo-data              ││
+│  └──────────────────────────┬──────────────────────────────────┘│
+│                              │                                   │
+│  ┌───────────────┬───────────┴───────────┬────────────────────┐ │
+│  │ Core Models   │    Simulation         │    RL              │ │
+│  │ & Validation  │    Engine             │    Training        │ │
+│  └───────────────┴───────────────────────┴────────────────────┘ │
+│                              │                                   │
+│  ┌───────────────────────────┴──────────────────────────────────┐│
+│  │                     In-Memory Registry                       ││
+│  │     (Thread-safe storage for all entities)                   ││
+│  └──────────────────────────────────────────────────────────────┘│
+└──────────────────────────────────────────────────────────────────┘
+                               │
+                    (Future: Database Layer)
+```
+
+### Data Model Reference
+
+All data structures use Pydantic v2 models with full validation. Here's a reference for building UI forms:
+
+#### 1. Route (receiver path on the field)
+
+```json
+{
+  "id": "route_slant_8",
+  "name": "8-Yard Slant",
+  "breakpoints": [
+    {"x_yards": 0.0, "y_yards": 0.0, "time_ms": 0.0},
+    {"x_yards": 3.0, "y_yards": 0.0, "time_ms": 300.0},
+    {"x_yards": 8.0, "y_yards": 5.0, "time_ms": 800.0}
+  ]
+}
+```
+
+**Field Reference:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique identifier (e.g., `route_slant_8`) |
+| `name` | string | Human-readable name |
+| `breakpoints` | array | Ordered list of waypoints |
+| `breakpoints[].x_yards` | float | Distance downfield from LOS (positive = forward) |
+| `breakpoints[].y_yards` | float | Lateral position (0 = center, positive = right) |
+| `breakpoints[].time_ms` | float | Milliseconds from snap to reach this point |
+
+**Validation Rules:**
+- At least 1 breakpoint required
+- Times must be monotonically increasing
+- Physical constraint: Cannot travel >15 yards/second between breakpoints
+
+**UI Suggestions:**
+- Visual route editor with draggable waypoints on a field diagram
+- Time slider to animate route progression
+- Speed calculator showing yards/second between points
+
+#### 2. Formation (player starting positions)
+
+```json
+{
+  "id": "form_trips_right",
+  "name": "Trips Right",
+  "slots": [
+    {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+    {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+    {"role": "WR1", "position": {"x": 0.0, "y": 12.0}},
+    {"role": "WR2", "position": {"x": 0.0, "y": 8.0}},
+    {"role": "WR3", "position": {"x": 0.0, "y": 4.0}}
+  ]
+}
+```
+
+**Field Reference:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique identifier |
+| `name` | string | Human-readable name |
+| `slots` | array | Exactly 5 player positions |
+| `slots[].role` | enum | One of: `QB`, `CENTER`, `WR1`, `WR2`, `WR3` |
+| `slots[].position.x` | float | X position (negative = behind LOS) |
+| `slots[].position.y` | float | Y position (0 = center) |
+
+**Validation Rules:**
+- Exactly 5 slots required
+- Must include QB and CENTER
+- All roles must be offensive
+- QB should be near center (|y| <= 5.0)
+
+**UI Suggestions:**
+- Drag-and-drop formation builder
+- Field grid with snap-to-grid
+- Preset templates (Trips, Twins, Bunch, Spread, Empty)
+
+#### 3. Player (individual with attributes)
+
+```json
+{
+  "id": "player_wr1_1",
+  "name": "Jaylen Davis",
+  "side": "OFFENSE",
+  "role": "WR1",
+  "attributes": {
+    "speed": 88.0,
+    "acceleration": 85.0,
+    "agility": 82.0,
+    "change_of_direction": 80.0,
+    "stamina": 78.0,
+    "hands": 85.0,
+    "route_running": 88.0,
+    "separation": 86.0,
+    "throw_power": 70.0,
+    "short_acc": 70.0,
+    "mid_acc": 70.0,
+    "deep_acc": 70.0,
+    "release_time_ms": 400.0,
+    "decision_latency_ms": 300.0,
+    "man_coverage": 70.0,
+    "zone_coverage": 70.0,
+    "reaction_time_ms": 300.0,
+    "ball_skills": 70.0,
+    "closing_speed": 70.0,
+    "pass_rush": 70.0,
+    "get_off": 70.0,
+    "contain": 70.0
+  }
+}
+```
+
+**Attribute Ranges (all 0.0 - 100.0 scale except timing in ms):**
+
+| Category | Attributes | Relevant For |
+|----------|------------|--------------|
+| Physical | `speed`, `acceleration`, `agility`, `change_of_direction`, `stamina` | All players |
+| Receiving | `hands`, `route_running`, `separation` | WRs, CENTER |
+| Passing | `throw_power`, `short_acc`, `mid_acc`, `deep_acc`, `release_time_ms` (200-800), `decision_latency_ms` (100-1000) | QB |
+| Coverage | `man_coverage`, `zone_coverage`, `reaction_time_ms` (100-800), `ball_skills`, `closing_speed` | Defenders |
+| Pass Rush | `pass_rush`, `get_off`, `contain` | RUSHER |
+
+**Roles:**
+- Offense: `QB`, `CENTER`, `WR1`, `WR2`, `WR3`
+- Defense: `RUSHER`, `CB1`, `CB2`, `SAFETY`, `LB`
+
+**UI Suggestions:**
+- Slider-based attribute editor with radar charts
+- Position-specific attribute templates
+- Import/export player profiles
+
+#### 4. Play (complete offensive play design)
+
+```json
+{
+  "id": "play_trips_flood",
+  "name": "Trips Flood",
+  "formation": { /* Formation object */ },
+  "assignments": {
+    "QB": null,
+    "CENTER": null,
+    "WR1": { /* Route object for WR1 */ },
+    "WR2": { /* Route object for WR2 */ },
+    "WR3": { /* Route object for WR3 */ }
+  },
+  "qb_plan": {
+    "progression_roles": ["WR2", "WR3", "WR1"],
+    "max_time_to_throw_ms": 3000.0,
+    "scramble_allowed": false
+  }
+}
+```
+
+**Key Points:**
+- `assignments` maps each role to either a Route or `null`
+- QB and CENTER can have `null` (don't run routes) OR a Route (CENTER can run routes after snap)
+- `progression_roles` defines QB read order - can include `CENTER`!
+- All progression roles must have routes assigned
+
+**UI Suggestions:**
+- Play designer combining formation + route assignment
+- Visual QB progression order editor
+- Drag routes from a route library onto player positions
+
+#### 5. Scenario (defensive setup and game context)
+
+```json
+{
+  "id": "scenario_man_cover1_1rush",
+  "name": "Man Cover 1 (1 Rush)",
+  "field": {
+    "width_yards": 40.0,
+    "total_length_yards": 80.0,
+    "endzone_depth_yards": 10.0,
+    "no_run_zone_depth_yards": 5.0
+  },
+  "rules": { /* Ruleset object */ },
+  "defense_call": {
+    "type": "MAN",
+    "shell": "COVER1",
+    "rushers_count": 1,
+    "notes": "Man coverage with 1 deep safety, 1 rusher"
+  },
+  "defender_start_positions": {
+    "CB1": {"x": 0.0, "y": 10.0},
+    "CB2": {"x": 0.0, "y": -10.0},
+    "SAFETY": {"x": 15.0, "y": 0.0},
+    "LB": {"x": -1.0, "y": 5.0},
+    "RUSHER": {"x": -7.0, "y": 0.0}
+  },
+  "randomness": {
+    "position_jitter_yards": 0.5,
+    "reaction_jitter_ms": 50.0
+  }
+}
+```
+
+**Coverage Types:**
+- `MAN` - Defenders assigned to specific receivers
+- `ZONE` - Defenders assigned to field zones
+
+**Coverage Shells:**
+- `COVER0` - No deep safety, all man
+- `COVER1` - 1 deep safety
+- `COVER2` - 2 deep safeties
+- `COVER3` - 3 deep zones
+
+**UI Suggestions:**
+- Defensive formation builder with coverage type selector
+- Visual coverage shell diagrams
+- Rush count slider (0-4)
+
+### API Endpoints Reference
+
+All endpoints accept/return JSON. Base URL: `http://localhost:8000`
+
+#### Entity CRUD
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/plays` | List all plays |
+| POST | `/plays` | Create a play |
+| GET | `/plays/{id}` | Get a specific play |
+| PUT | `/plays/{id}` | Update a play |
+| GET | `/routes` | List all routes |
+| POST | `/routes` | Create a route |
+| GET | `/formations` | List all formations |
+| POST | `/formations` | Create a formation |
+| GET | `/players` | List all players |
+| POST | `/players` | Create a player |
+| GET | `/scenarios` | List all scenarios |
+| POST | `/scenarios` | Create a scenario |
+| GET | `/rules` | List all rulesets |
+| POST | `/rules` | Create a ruleset |
+
+#### Simulation & Training
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/simulate` | Run play simulation |
+| POST | `/train` | Train RL policy |
+| POST | `/evaluate` | Evaluate policy performance |
+| POST | `/seed-demo-data` | Load demo data |
+| GET | `/health` | Health check |
+
+### Example: Creating a Custom Play via API
+
+```bash
+# 1. Create a custom route
+curl -X POST http://localhost:8000/routes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "route": {
+      "id": "route_custom_wheel",
+      "name": "Wheel Route",
+      "breakpoints": [
+        {"x_yards": 0.0, "y_yards": 0.0, "time_ms": 0.0},
+        {"x_yards": 2.0, "y_yards": -3.0, "time_ms": 300.0},
+        {"x_yards": 10.0, "y_yards": -5.0, "time_ms": 900.0},
+        {"x_yards": 20.0, "y_yards": -2.0, "time_ms": 1800.0}
+      ]
+    }
+  }'
+
+# 2. Create a play using that route
+curl -X POST http://localhost:8000/plays \
+  -H "Content-Type: application/json" \
+  -d '{
+    "play": {
+      "id": "play_my_custom",
+      "name": "My Custom Play",
+      "formation": {
+        "id": "form_spread_custom",
+        "name": "Custom Spread",
+        "slots": [
+          {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+          {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+          {"role": "WR1", "position": {"x": 0.0, "y": 15.0}},
+          {"role": "WR2", "position": {"x": 0.0, "y": -15.0}},
+          {"role": "WR3", "position": {"x": 1.0, "y": 5.0}}
+        ]
+      },
+      "assignments": {
+        "QB": null,
+        "CENTER": null,
+        "WR1": {"id": "route_go", "name": "Go", "breakpoints": [
+          {"x_yards": 0.0, "y_yards": 0.0, "time_ms": 0.0},
+          {"x_yards": 25.0, "y_yards": 0.0, "time_ms": 2500.0}
+        ]},
+        "WR2": {"id": "route_custom_wheel", "name": "Wheel Route", "breakpoints": [
+          {"x_yards": 0.0, "y_yards": 0.0, "time_ms": 0.0},
+          {"x_yards": 2.0, "y_yards": -3.0, "time_ms": 300.0},
+          {"x_yards": 10.0, "y_yards": -5.0, "time_ms": 900.0},
+          {"x_yards": 20.0, "y_yards": -2.0, "time_ms": 1800.0}
+        ]},
+        "WR3": {"id": "route_slant_8", "name": "Slant", "breakpoints": [
+          {"x_yards": 0.0, "y_yards": 0.0, "time_ms": 0.0},
+          {"x_yards": 3.0, "y_yards": 0.0, "time_ms": 300.0},
+          {"x_yards": 8.0, "y_yards": 5.0, "time_ms": 800.0}
+        ]}
+      },
+      "qb_plan": {
+        "progression_roles": ["WR3", "WR2", "WR1"],
+        "max_time_to_throw_ms": 3500.0,
+        "scramble_allowed": false
+      }
+    }
+  }'
+
+# 3. Simulate the play
+curl -X POST http://localhost:8000/simulate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "play_id": "play_my_custom",
+    "scenario_ids": ["scenario_man_cover1_1rush", "scenario_zone_cover2"],
+    "num_episodes": 100,
+    "seed": 42,
+    "mode": "EVAL"
+  }'
+```
+
+### Example: CENTER Running a Route
+
+The CENTER position can now run routes after snapping the ball, which is common in flag football where the center is an eligible receiver.
+
+```json
+{
+  "id": "play_center_release",
+  "name": "Center Release",
+  "formation": {
+    "id": "form_spread",
+    "name": "Spread",
+    "slots": [
+      {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+      {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+      {"role": "WR1", "position": {"x": 0.0, "y": 15.0}},
+      {"role": "WR2", "position": {"x": 0.0, "y": -15.0}},
+      {"role": "WR3", "position": {"x": 1.0, "y": 8.0}}
+    ]
+  },
+  "assignments": {
+    "QB": null,
+    "CENTER": {
+      "id": "route_center_seam",
+      "name": "Center Seam",
+      "breakpoints": [
+        {"x_yards": 0.0, "y_yards": 0.0, "time_ms": 0.0},
+        {"x_yards": 5.0, "y_yards": 0.0, "time_ms": 600.0},
+        {"x_yards": 12.0, "y_yards": 0.0, "time_ms": 1200.0}
+      ]
+    },
+    "WR1": { /* go route */ },
+    "WR2": { /* out route */ },
+    "WR3": { /* drag route */ }
+  },
+  "qb_plan": {
+    "progression_roles": ["CENTER", "WR3", "WR2", "WR1"],
+    "max_time_to_throw_ms": 3000.0,
+    "scramble_allowed": false
+  }
+}
+```
+
+### Recommended UI Features
+
+#### Phase 1: Core Editors
+1. **Route Editor** - Visual waypoint editor on field grid
+2. **Formation Builder** - Drag-and-drop player positioning
+3. **Play Designer** - Combine formation + route assignments
+4. **Player Manager** - CRUD with attribute sliders
+
+#### Phase 2: Simulation & Analysis
+5. **Scenario Builder** - Defense setup and coverage selection
+6. **Simulation Runner** - Run plays and view results
+7. **Play Visualizer** - Animate play execution with traces
+
+#### Phase 3: Advanced Features
+8. **Playbook Manager** - Organize plays into categories
+9. **RL Training Dashboard** - Train and compare policies
+10. **Performance Analytics** - Charts and comparisons
+
+### Frontend Technology Recommendations
+
+**State Management:**
+- React Query or SWR for API data fetching
+- Zustand or Redux for complex local state
+- Optimistic updates for smooth UX
+
+**Visualization:**
+- Canvas/SVG for field and route rendering
+- D3.js or Recharts for performance charts
+- Framer Motion for animations
+
+**Form Handling:**
+- React Hook Form for complex forms
+- Zod for client-side validation (matches Pydantic)
+
+### Data Persistence Roadmap
+
+Currently, the engine uses an in-memory registry. For production:
+
+1. **Add database layer** (PostgreSQL recommended)
+2. **User authentication** for personal playbooks
+3. **Team/organization support** for shared plays
+4. **Version history** for play iterations
+
+---
 
 ## Installation
 
@@ -79,9 +529,9 @@ python scripts/seed_demo_data.py
 
 This loads:
 - 6 plays (Trips Flood, Bunch Quick Slants, Twins Smash, etc.)
-- 10 routes (slant, hitch, corner, post, go, etc.)
+- 11 routes (slant, hitch, corner, post, go, block, etc.)
 - 8 formations (Trips, Twins, Bunch, Spread, Empty, etc.)
-- 10 players (QB, WRs, CBs, Safety, LB, Rusher)
+- 10 players (QB, CENTER, WRs, CBs, Safety, LB, Rusher)
 - 8 scenarios (Man Cover 0/1, Zone Cover 2/3, 3rd & short/long, redzone, goalline)
 - 2 rulesets (standard, compressed field)
 
@@ -107,204 +557,6 @@ API docs at `http://localhost:8000/docs`
 pytest tests/ -v
 ```
 
-Tests cover:
-- Determinism (same seed = identical results)
-- Validation (formation/route invariants)
-- API smoke tests
-- RL training smoke tests
-
-## Usage Examples
-
-### Example 1: List Available Plays
-
-```bash
-curl http://localhost:8000/plays
-```
-
-Returns:
-```json
-[
-  {
-    "id": "play_trips_flood",
-    "name": "Trips Flood",
-    "formation": {...},
-    "assignments": {...},
-    "qb_plan": {...}
-  },
-  ...
-]
-```
-
-### Example 2: Simulate a Play
-
-```bash
-curl -X POST http://localhost:8000/simulate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "play_id": "play_trips_flood",
-    "scenario_ids": ["scenario_man_cover0", "scenario_zone_cover2"],
-    "num_episodes": 50,
-    "seed": 42,
-    "mode": "EVAL",
-    "trace_policy": {"mode": "NONE"}
-  }'
-```
-
-Returns:
-```json
-{
-  "run_id": "run_abc123",
-  "play_id": "play_trips_flood",
-  "num_episodes": 50,
-  "metrics": {
-    "overall": {
-      "num_plays": 50,
-      "completion_rate": 0.68,
-      "sack_rate": 0.08,
-      "intercept_rate": 0.02,
-      "yards_mean": 8.4,
-      "yards_p50": 7.2,
-      "yards_p90": 14.1,
-      "time_to_throw_mean": 1850.5,
-      "target_distribution": {"WR1": 20, "WR2": 25, "WR3": 5},
-      "failure_modes": {"TIGHT_WINDOW": 12, "SACK_BEFORE_THROW": 4}
-    },
-    "by_bucket": {...}
-  },
-  "artifacts": {"traces": []}
-}
-```
-
-### Example 3: Simulate with Trace Sampling
-
-```bash
-curl -X POST http://localhost:8000/simulate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "play_id": "play_spread_vertical",
-    "scenario_ids": ["scenario_zone_cover3"],
-    "num_episodes": 100,
-    "seed": 123,
-    "mode": "EVAL",
-    "trace_policy": {
-      "mode": "TOP_N",
-      "top_n": 5
-    }
-  }'
-```
-
-Returns top 5 best plays with full position traces.
-
-### Example 4: Train RL Policy
-
-```bash
-curl -X POST http://localhost:8000/train \
-  -H "Content-Type: application/json" \
-  -d '{
-    "play_ids": [
-      "play_trips_flood",
-      "play_bunch_quick_slants",
-      "play_twins_smash",
-      "play_tight_levels"
-    ],
-    "scenario_ids": [
-      "scenario_3rd_short_man",
-      "scenario_3rd_long_zone"
-    ],
-    "offensive_players": {
-      "QB": "player_qb1",
-      "CENTER": "player_center1",
-      "WR1": "player_wr1_1",
-      "WR2": "player_wr2_1",
-      "WR3": "player_wr3_1"
-    },
-    "defensive_players": {
-      "RUSHER": "player_rusher1",
-      "CB1": "player_cb1_1",
-      "CB2": "player_cb2_1",
-      "SAFETY": "player_safety1",
-      "LB": "player_lb1"
-    },
-    "seed": 42,
-    "steps": 1000,
-    "algo": "BANDIT",
-    "epsilon": 0.1,
-    "learning_rate": 0.1
-  }'
-```
-
-Returns:
-```json
-{
-  "training_id": "train_xyz789",
-  "summary": {
-    "algorithm": "BANDIT",
-    "total_steps": 1000,
-    "final_reward_mean": 7.2,
-    "final_reward_std": 4.1,
-    "reward_history_length": 1000,
-    "eval_history": [...],
-    "best_actions_per_bucket": {
-      "0": 1,
-      "3": 2,
-      "4": 0
-    }
-  },
-  "policy_artifact_id": "train_xyz789"
-}
-```
-
-### Example 5: Evaluate Policy
-
-```bash
-curl -X POST http://localhost:8000/evaluate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "policy_id": "baseline",
-    "play_ids": [
-      "play_trips_flood",
-      "play_spread_vertical"
-    ],
-    "scenario_ids": ["scenario_redzone_man", "scenario_goalline_cover0"],
-    "offensive_players": {...},
-    "defensive_players": {...},
-    "num_episodes": 100,
-    "seed": 42
-  }'
-```
-
-Returns per-bucket performance analysis.
-
-### Example 6: Create Custom Play
-
-```bash
-curl -X POST http://localhost:8000/plays \
-  -H "Content-Type: application/json" \
-  -d '{
-    "play": {
-      "id": "play_custom_1",
-      "name": "My Custom Play",
-      "formation": {
-        "id": "form_trips_right",
-        "name": "Trips Right",
-        "slots": [...]
-      },
-      "assignments": {
-        "QB": null,
-        "CENTER": null,
-        "WR1": {"id": "route_go", "name": "Go", "breakpoints": [...]},
-        "WR2": {"id": "route_post_15", "name": "Post", "breakpoints": [...]},
-        "WR3": {"id": "route_drag_10", "name": "Drag", "breakpoints": [...]}
-      },
-      "qb_plan": {
-        "progression_roles": ["WR1", "WR2", "WR3"],
-        "max_time_to_throw_ms": 3000.0,
-        "scramble_allowed": false
-      }
-    }
-  }'
-```
-
 ## Interpreting Metrics
 
 ### Overall Metrics
@@ -320,14 +572,14 @@ curl -X POST http://localhost:8000/plays \
 Shows which receivers were targeted:
 ```json
 "target_distribution": {
-  "WR1": 20,  // WR1 targeted 20 times
-  "WR2": 25,  // WR2 targeted 25 times
-  "WR3": 5    // WR3 targeted 5 times
+  "WR1": 20,
+  "WR2": 25,
+  "WR3": 5,
+  "CENTER": 10
 }
 ```
 
 ### Failure Modes
-Counts of specific failure causes:
 - **SACK_BEFORE_THROW**: Rusher reached QB
 - **TIGHT_WINDOW**: Low separation at throw/catch
 - **LATE_THROW**: Threw near max time limit
@@ -337,14 +589,12 @@ Counts of specific failure causes:
 ### By-Bucket Metrics
 Same metrics sliced by game situation:
 - **1ST_ANY**: First down, any distance
-- **2ND_SHORT**: 2nd down, ≤5 yards
+- **2ND_SHORT**: 2nd down, <=5 yards
 - **2ND_LONG**: 2nd down, >5 yards
-- **3RD_SHORT**: 3rd down, ≤5 yards
+- **3RD_SHORT**: 3rd down, <=5 yards
 - **3RD_LONG**: 3rd down, >5 yards
 - **REDZONE**: Inside 20 yards
 - **GOALLINE**: Inside 5 yards
-
-Use this to identify which plays work in which situations!
 
 ## Architecture
 
@@ -352,10 +602,25 @@ Use this to identify which plays work in which situations!
 fieldos-engine/
 ├── fieldos_engine/
 │   ├── core/          # Data models, validation, registry
+│   │   ├── models.py  # Pydantic models for all entities
+│   │   ├── validation.py # Cross-entity validation
+│   │   ├── registry.py # Thread-safe in-memory storage
+│   │   └── ids.py     # ID generation
 │   ├── sim/           # Simulation engine
+│   │   ├── engine.py  # Main simulation loop
+│   │   ├── motion.py  # Route interpolation
+│   │   ├── coverage.py # Man/zone coverage logic
+│   │   ├── outcome.py # Completion probability
+│   │   └── trace.py   # Trace sampling
 │   ├── rl/            # RL environment, policies, training
+│   │   ├── env.py     # Gymnasium environment
+│   │   ├── policy.py  # Bandit policies
+│   │   └── train.py   # Training loops
 │   ├── api/           # FastAPI endpoints
-│   └── data/demo/     # Demo data files
+│   │   ├── main.py    # App setup
+│   │   ├── routes.py  # All endpoints
+│   │   └── schemas.py # Request/response DTOs
+│   └── data/demo/     # Demo JSON data files
 ├── tests/             # Comprehensive tests
 ├── scripts/           # Utility scripts
 └── README.md
@@ -368,6 +633,7 @@ fieldos-engine/
 3. **Separation of concerns**: Clear boundaries between data model, simulation, RL, and API
 4. **Extensibility**: Easy to add new plays, formations, coverage schemes
 5. **Type safety**: Full Pydantic models with validation
+6. **UI-Ready**: RESTful CRUD API designed for frontend integration
 
 ## Development
 
@@ -393,16 +659,16 @@ registry.clear_all()
 
 ## Roadmap / Future Enhancements
 
-- [ ] Add QB decision-making RL (when to throw)
-- [ ] Implement actual YAC pursuit physics
-- [ ] Add pre-snap motion
-- [ ] Support for running plays (currently pass-only)
+- [ ] Database persistence layer (PostgreSQL/SQLite)
+- [ ] User authentication and authorization
+- [ ] Frontend UI (React recommended)
+- [ ] Replay visualization with animated traces
+- [ ] Pre-snap motion support
+- [ ] Running plays (currently pass-only)
 - [ ] Multi-down drive simulation
-- [ ] Persistence layer (PostgreSQL/SQLite)
-- [ ] Frontend integration
-- [ ] Replay visualization
 - [ ] Advanced coverage schemes
 - [ ] Player fatigue model
+- [ ] Team/organization playbook sharing
 
 ## License
 

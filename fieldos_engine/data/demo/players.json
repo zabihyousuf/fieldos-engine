@@ -24,10 +24,13 @@
     "side": "OFFENSE",
     "role": "CENTER",
     "attributes": {
-      "speed": 60.0,
-      "acceleration": 60.0,
-      "agility": 65.0,
-      "stamina": 75.0
+      "speed": 70.0,
+      "acceleration": 68.0,
+      "agility": 72.0,
+      "stamina": 75.0,
+      "hands": 80.0,
+      "route_running": 70.0,
+      "separation": 65.0
     }
   },
   {
@@ -79,25 +82,10 @@
     }
   },
   {
-    "id": "player_rusher1",
-    "name": "Dante Williams",
-    "side": "DEFENSE",
-    "role": "RUSHER",
-    "attributes": {
-      "speed": 85.0,
-      "acceleration": 88.0,
-      "agility": 80.0,
-      "stamina": 82.0,
-      "pass_rush": 88.0,
-      "get_off": 90.0,
-      "contain": 82.0
-    }
-  },
-  {
-    "id": "player_cb1_1",
+    "id": "player_d1",
     "name": "Isaiah Brown",
     "side": "DEFENSE",
-    "role": "CB1",
+    "role": "D1",
     "attributes": {
       "speed": 92.0,
       "acceleration": 90.0,
@@ -108,32 +96,57 @@
       "zone_coverage": 85.0,
       "reaction_time_ms": 220.0,
       "ball_skills": 87.0,
-      "closing_speed": 92.0
+      "closing_speed": 92.0,
+      "pass_rush": 70.0,
+      "get_off": 75.0,
+      "contain": 80.0
     }
   },
   {
-    "id": "player_cb2_1",
-    "name": "Malik Johnson",
+    "id": "player_d2",
+    "name": "Devon Clark",
     "side": "DEFENSE",
-    "role": "CB2",
+    "role": "D2",
     "attributes": {
-      "speed": 88.0,
-      "acceleration": 86.0,
-      "agility": 88.0,
-      "change_of_direction": 87.0,
-      "stamina": 83.0,
-      "man_coverage": 85.0,
-      "zone_coverage": 87.0,
-      "reaction_time_ms": 250.0,
-      "ball_skills": 82.0,
-      "closing_speed": 88.0
+      "speed": 82.0,
+      "acceleration": 80.0,
+      "agility": 81.0,
+      "stamina": 84.0,
+      "man_coverage": 75.0,
+      "zone_coverage": 85.0,
+      "reaction_time_ms": 270.0,
+      "ball_skills": 78.0,
+      "closing_speed": 82.0,
+      "pass_rush": 75.0,
+      "get_off": 78.0,
+      "contain": 85.0
     }
   },
   {
-    "id": "player_safety1",
+    "id": "player_d3",
+    "name": "Dante Williams",
+    "side": "DEFENSE",
+    "role": "D3",
+    "attributes": {
+      "speed": 85.0,
+      "acceleration": 88.0,
+      "agility": 80.0,
+      "stamina": 82.0,
+      "man_coverage": 70.0,
+      "zone_coverage": 75.0,
+      "reaction_time_ms": 250.0,
+      "ball_skills": 72.0,
+      "closing_speed": 85.0,
+      "pass_rush": 90.0,
+      "get_off": 92.0,
+      "contain": 82.0
+    }
+  },
+  {
+    "id": "player_d4",
     "name": "Xavier Thompson",
     "side": "DEFENSE",
-    "role": "SAFETY",
+    "role": "D4",
     "attributes": {
       "speed": 87.0,
       "acceleration": 85.0,
@@ -144,24 +157,31 @@
       "zone_coverage": 92.0,
       "reaction_time_ms": 240.0,
       "ball_skills": 88.0,
-      "closing_speed": 87.0
+      "closing_speed": 87.0,
+      "pass_rush": 72.0,
+      "get_off": 74.0,
+      "contain": 80.0
     }
   },
   {
-    "id": "player_lb1",
-    "name": "Devon Clark",
+    "id": "player_d5",
+    "name": "Malik Johnson",
     "side": "DEFENSE",
-    "role": "LB",
+    "role": "D5",
     "attributes": {
-      "speed": 82.0,
-      "acceleration": 80.0,
-      "agility": 81.0,
-      "stamina": 84.0,
-      "man_coverage": 75.0,
-      "zone_coverage": 85.0,
-      "reaction_time_ms": 270.0,
-      "ball_skills": 78.0,
-      "closing_speed": 82.0
+      "speed": 88.0,
+      "acceleration": 86.0,
+      "agility": 88.0,
+      "change_of_direction": 87.0,
+      "stamina": 83.0,
+      "man_coverage": 85.0,
+      "zone_coverage": 87.0,
+      "reaction_time_ms": 250.0,
+      "ball_skills": 82.0,
+      "closing_speed": 88.0,
+      "pass_rush": 68.0,
+      "get_off": 72.0,
+      "contain": 78.0
     }
   }
 ]

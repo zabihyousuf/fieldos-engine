@@ -3,7 +3,7 @@
 from typing import List, Optional
 from dataclasses import dataclass
 from enum import Enum
-import random
+import numpy as np
 
 from ..core.models import TraceMode
 from .engine import SimulationTrace
@@ -22,7 +22,7 @@ class TraceSampler:
         self.mode = mode
         self.top_n = top_n
         self.sample_rate = sample_rate
-        self.rng = random.Random(seed)
+        self.rng = np.random.Generator(np.random.PCG64(seed))
 
         self.traces: List[SimulationTrace] = []
         self.all_traces: List[SimulationTrace] = []

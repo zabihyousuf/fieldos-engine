@@ -302,10 +302,8 @@ def _draw_field(ax, half_width: float, behind_los: float, ahead_los: float):
     ax.set_xlabel('Lateral Position (yards)', fontsize=11)
     ax.set_ylabel('Downfield (yards from LOS)', fontsize=11)
 
-    # Add legend for teams
-    off_patch = patches.Patch(color=OFFENSE_COLOR, label='Offense')
-    def_patch = patches.Patch(color=DEFENSE_COLOR, label='Defense')
-    ax.legend(handles=[off_patch, def_patch], loc='lower right', fontsize=10)
+    # Add legend for teams with proper markers - created in static viz function
+    # Skip legend here, will be added in visualize_play_static with full context
 
     ax.set_aspect('equal')
     ax.grid(False)
@@ -485,15 +483,40 @@ def visualize_play_static(
         for i, role in enumerate(play.qb_plan.progression_roles):
             progression_order[role] = i + 1  # 1-indexed
 
+    # Determine target role from target_info string
+    target_role = None
+    if target_info:
+        # Try to match target_info to a role
+        target_upper = target_info.upper()
+        for role in Role:
+            if role.value.upper() == target_upper or role.name == target_upper:
+                target_role = role
+                break
+
+    # Colors for target highlighting
+    TARGET_COLOR = '#f59e0b'  # Amber/gold for target
+    TARGET_ROUTE_COLOR = '#fbbf24'  # Lighter gold for target route
+
     # Plot offensive formation
     for slot in play.formation.slots:
         pos = slot.position
         plot_x, plot_y = pos.y, pos.x  # Convert: lateral->X, downfield->Y
 
-        ax.plot(plot_x, plot_y, 'o', color=OFFENSE_COLOR, markersize=20,
-                markeredgecolor='white', markeredgewidth=2, zorder=10)
-        ax.text(plot_x, plot_y, _get_role_abbrev(slot.role), fontsize=9,
-                fontweight='bold', ha='center', va='center', color='white', zorder=11)
+        # Check if this is the target receiver
+        is_target = (target_role and slot.role == target_role)
+        
+        if is_target:
+            # Target receiver - gold star marker
+            ax.plot(plot_x, plot_y, '*', color=TARGET_COLOR, markersize=28,
+                    markeredgecolor='white', markeredgewidth=1.5, zorder=12)
+            ax.text(plot_x, plot_y - 0.3, _get_role_abbrev(slot.role), fontsize=8,
+                    fontweight='bold', ha='center', va='center', color='#78350f', zorder=13)
+        else:
+            # Regular offensive player - circle
+            ax.plot(plot_x, plot_y, 'o', color=OFFENSE_COLOR, markersize=20,
+                    markeredgecolor='white', markeredgewidth=2, zorder=10)
+            ax.text(plot_x, plot_y, _get_role_abbrev(slot.role), fontsize=9,
+                    fontweight='bold', ha='center', va='center', color='white', zorder=11)
 
         # Draw route if exists
         route = play.assignments.get(slot.role)
@@ -504,13 +527,17 @@ def visualize_play_static(
                 route_xs.append(pos.y + bp.y_yards)
                 route_ys.append(pos.x + bp.x_yards)
 
-            ax.plot(route_xs, route_ys, color=ROUTE_COLOR, linewidth=2.5,
-                    linestyle='--', alpha=0.8, zorder=5)
+            # Use gold for target route, blue for others
+            route_color = TARGET_ROUTE_COLOR if is_target else ROUTE_COLOR
+            route_width = 3.5 if is_target else 2.5
+            
+            ax.plot(route_xs, route_ys, color=route_color, linewidth=route_width,
+                    linestyle='--', alpha=0.9 if is_target else 0.7, zorder=6 if is_target else 5)
             if len(route_xs) >= 2:
                 ax.annotate('', xy=(route_xs[-1], route_ys[-1]),
                            xytext=(route_xs[-2], route_ys[-2]),
-                           arrowprops=dict(arrowstyle='->', color=ROUTE_COLOR, lw=2.5),
-                           zorder=5)
+                           arrowprops=dict(arrowstyle='->', color=route_color, lw=route_width),
+                           zorder=6 if is_target else 5)
             
             # Add progression number at route endpoint
             if slot.role in progression_order:
@@ -518,11 +545,15 @@ def visualize_play_static(
                 # Position label slightly offset from route endpoint
                 label_x = route_xs[-1] + 1.0
                 label_y = route_ys[-1] + 0.5
+                # Use gold background for target
+                bg_color = '#fef3c7' if is_target else '#dbeafe'
+                edge_color = '#d97706' if is_target else '#1e40af'
+                text_color = '#92400e' if is_target else '#1e40af'
                 ax.annotate(f'{read_num}', xy=(route_xs[-1], route_ys[-1]),
                            xytext=(label_x, label_y),
-                           fontsize=12, fontweight='bold', color='#1e40af',
-                           bbox=dict(boxstyle='circle,pad=0.3', facecolor='#dbeafe', 
-                                   edgecolor='#1e40af', linewidth=1.5),
+                           fontsize=12, fontweight='bold', color=text_color,
+                           bbox=dict(boxstyle='circle,pad=0.3', facecolor=bg_color, 
+                                   edgecolor=edge_color, linewidth=1.5),
                            zorder=15)
 
     # Build adjusted positions for man coverage defenders
@@ -552,9 +583,10 @@ def visualize_play_static(
     for def_role, pos in adjusted_def_positions.items():
         plot_x, plot_y = pos.y, pos.x  # Convert: lateral->X, downfield->Y
 
-        ax.plot(plot_x, plot_y, 'o', color=DEFENSE_COLOR, markersize=20,
+        # Defense uses square markers for distinction
+        ax.plot(plot_x, plot_y, 's', color=DEFENSE_COLOR, markersize=18,
                 markeredgecolor='white', markeredgewidth=2, zorder=10)
-        ax.text(plot_x, plot_y, _get_role_abbrev(def_role), fontsize=9,
+        ax.text(plot_x, plot_y, _get_role_abbrev(def_role), fontsize=8,
                 fontweight='bold', ha='center', va='center', color='white', zorder=11)
 
         # Draw coverage assignment if provided
@@ -575,19 +607,35 @@ def visualize_play_static(
     ax.set_title(f'{play.name} vs {scenario.name}\n({coverage_info})',
                  fontsize=14, fontweight='bold', pad=10)
 
+    # Add legend with distinct shapes
+    from matplotlib.lines import Line2D
+    legend_elements = [
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=OFFENSE_COLOR,
+               markersize=12, markeredgecolor='white', markeredgewidth=1, label='Offense'),
+        Line2D([0], [0], marker='s', color='w', markerfacecolor=DEFENSE_COLOR,
+               markersize=11, markeredgecolor='white', markeredgewidth=1, label='Defense'),
+        Line2D([0], [0], marker='*', color='w', markerfacecolor='#f59e0b',
+               markersize=15, markeredgecolor='white', markeredgewidth=0.5, label='Target'),
+    ]
+    ax.legend(handles=legend_elements, loc='lower right', fontsize=9,
+              framealpha=0.9, edgecolor='gray')
+
     # Add info box with target and scenario recommendations
     info_lines = []
     if target_info:
-        info_lines.append(f"🎯 Target: {target_info}")
+        info_lines.append(f"Target: {target_info}")
     if best_scenario_info:
-        info_lines.append(f"✓ Best vs: {best_scenario_info}")
+        info_lines.append(f"Best vs: {best_scenario_info}")
     if stats_info:
+        if 'best_situation' in stats_info and stats_info['best_situation']:
+            # Format situation nicely (e.g., "3RD_SHORT" -> "3rd & Short")
+            sit = stats_info['best_situation']
+            sit_display = sit.replace('_', ' & ').replace('1ST', '1st').replace('2ND', '2nd').replace('3RD', '3rd')
+            info_lines.append(f"Best for: {sit_display}")
         if 'completion_rate' in stats_info:
-            info_lines.append(f"📊 Comp%: {stats_info['completion_rate']*100:.0f}%")
+            info_lines.append(f"Comp%: {stats_info['completion_rate']*100:.0f}%")
         if 'avg_yards' in stats_info:
-            info_lines.append(f"📏 Avg Yards: {stats_info['avg_yards']:.1f}")
-        if 'attempts' in stats_info:
-            info_lines.append(f"🔄 Attempts: {stats_info['attempts']}")
+            info_lines.append(f"Avg Yards: {stats_info['avg_yards']:.1f}")
     
     if info_lines:
         info_text = '\n'.join(info_lines)

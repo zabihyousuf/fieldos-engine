@@ -1,12 +1,12 @@
 {
-  "algorithm": "BANDIT",
-  "steps": 100,
+  "algorithm": "UCB",
+  "steps": 100000,
   "epsilon": 0.1,
   "learning_rate": 0.1,
   "ucb_c": 2.0,
   "seed": 42,
-  "final_reward_mean": 3.992350524005419,
-  "final_reward_std": 5.204639211198983,
+  "final_reward_mean": 7.579422580953408,
+  "final_reward_std": 7.226758842538907,
   "playbook": [
     "play_trips_flood",
     "play_bunch_slants",
@@ -19,41 +19,41 @@
   ],
   "best_actions": {
     "1ST_ANY": {
-      "action_idx": 0,
-      "play_id": "play_trips_flood",
-      "play_name": "Trips Flood"
+      "action_idx": 19,
+      "play_id": "gen_play_19",
+      "play_name": "Generated Play #12"
     },
     "3RD_LONG": {
-      "action_idx": 0,
-      "play_id": "play_trips_flood",
-      "play_name": "Trips Flood"
+      "action_idx": 35,
+      "play_id": "gen_play_35",
+      "play_name": "Generated Play #28"
     },
     "3RD_SHORT": {
-      "action_idx": 0,
-      "play_id": "play_trips_flood",
-      "play_name": "Trips Flood"
+      "action_idx": 22,
+      "play_id": "gen_play_22",
+      "play_name": "Generated Play #15"
     },
     "2ND_SHORT": {
-      "action_idx": 14,
-      "play_id": "gen_play_14",
-      "play_name": "Generated Play #7"
+      "action_idx": 22,
+      "play_id": "gen_play_22",
+      "play_name": "Generated Play #15"
     },
     "REDZONE": {
-      "action_idx": 0,
-      "play_id": "play_trips_flood",
-      "play_name": "Trips Flood"
+      "action_idx": 62,
+      "play_id": "gen_play_62",
+      "play_name": "Generated Play #55"
     },
     "2ND_LONG": {
-      "action_idx": 15,
-      "play_id": "gen_play_15",
-      "play_name": "Generated Play #8"
+      "action_idx": 22,
+      "play_id": "gen_play_22",
+      "play_name": "Generated Play #15"
     },
     "GOALLINE": {
-      "action_idx": 0,
-      "play_id": "play_trips_flood",
-      "play_name": "Trips Flood"
+      "action_idx": 22,
+      "play_id": "gen_play_22",
+      "play_name": "Generated Play #15"
     }
   },
-  "results_csv": "training_runs/run_20260125_192205/results.csv",
-  "results_summary": "training_runs/run_20260125_192205/summary.json"
+  "results_csv": "training_runs/run_20260125_205823/results.csv",
+  "results_summary": "training_runs/run_20260125_205823/summary.json"
 }

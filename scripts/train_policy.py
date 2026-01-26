@@ -23,6 +23,7 @@ import json
 import argparse
 import pickle
 import csv
+import numpy as np
 from pathlib import Path
 from datetime import datetime
 
@@ -58,7 +59,7 @@ def train_policy(
     seed: int = 42,
     save_path: str = None,
     use_generated_plays: bool = True,
-    num_generated_plays: int = 20,
+    num_generated_plays: int = 100,
     visualize: bool = True,
     verbose: bool = True
 ):
@@ -141,11 +142,13 @@ def train_policy(
     )
     
     # Update plays list to include generated plays if enabled
-    if use_generated_plays:
-        # Get all plays from the env's expanded playbook
-        all_play_ids = env.playbook if hasattr(env, 'playbook') else play_ids
+    num_base_plays = len(plays)
+    if use_generated_plays and hasattr(env, 'generated_plays'):
+        # Extend plays list with generated plays from env
+        plays = plays + env.generated_plays
+        play_ids = play_ids + [gp.id for gp in env.generated_plays]
         if verbose:
-            print(f"  Total plays (base + generated): {env.action_space.n}")
+            print(f"  Total plays (base + generated): {len(plays)}")
 
     # Training configuration
     config = TrainingConfig(
@@ -221,21 +224,40 @@ def train_policy(
         outcome_data = step_info.get('outcome', {})
         situation_data = step_info.get('situation', {})
         
+        # Get bucket from obs (first 7 elements are one-hot bucket) or from situation_data
+        if hasattr(obs, '__getitem__') and len(obs) >= 7:
+            # obs[0:7] is one-hot encoded bucket, find which one is 1.0
+            bucket_idx = int(np.argmax(obs[:7]))
+        else:
+            bucket_idx = situation_data.get('bucket_idx', -1)
+        
+        # Get the play object for additional info
+        play_obj = plays[action] if action < len(plays) else None
+        is_generated = action >= len([p for p in plays if not p.name.startswith('Gen')])
+        
         detailed_results.append({
             'step': step,
+            'action_index': action,
             'play_id': step_info.get('play_id', ''),
-            'play_name': plays[action].name if action < len(plays) else f'action_{action}',
-            'situation': BUCKET_NAMES.get(situation_data.get('bucket_idx', -1), situation_data.get('bucket', '')),
+            'play_name': play_obj.name if play_obj else f'action_{action}',
+            'formation_name': play_obj.formation.name if play_obj and play_obj.formation else '',
+            'is_generated_play': is_generated or step_info.get('is_generated', False),
+            'situation': BUCKET_NAMES.get(bucket_idx, ''),
             'down': situation_data.get('down', ''),
             'yards_to_gain': situation_data.get('yards_to_gain', ''),
             'scenario_id': info.get('scenario_id', ''),
+            'scenario_name': step_info.get('scenario_name', ''),
+            'defense_type': step_info.get('defense_type', ''),
+            'coverage_shell': step_info.get('coverage_shell', ''),
             'outcome': outcome_data.get('outcome', ''),
             'yards_gained': outcome_data.get('yards_gained', 0),
             'target_role': outcome_data.get('target_role', ''),
             'time_to_throw_ms': outcome_data.get('time_to_throw_ms', ''),
             'completion_probability': outcome_data.get('completion_probability', ''),
+            'separation_yards': outcome_data.get('separation', ''),
+            'defender_distance': outcome_data.get('defender_distance', ''),
             'reward': reward,
-            'is_generated_play': step_info.get('is_generated', False)
+            'cumulative_reward': sum(reward_history)
         })
         
         # Print progress every 500 steps
@@ -262,24 +284,85 @@ def train_policy(
     # Calculate per-play and per-situation stats
     play_stats = {}
     situation_stats = {}
+    situation_play_stats = {}  # Per-situation breakdown of each play
+    scenario_stats = {}
+    formation_stats = {}
+    
     for r in detailed_results:
         play_name = r['play_name']
+        situation = r['situation']
+        scenario_id = r.get('scenario_id', 'unknown')
+        formation = r.get('formation_name', 'unknown')
+        
+        # Per-play stats
         if play_name not in play_stats:
-            play_stats[play_name] = {'total': 0, 'completions': 0, 'yards': 0, 'rewards': 0}
+            play_stats[play_name] = {'total': 0, 'completions': 0, 'yards': 0, 'rewards': 0, 
+                                     'targets': {}, 'situations': {}, 'scenarios': {}}
         play_stats[play_name]['total'] += 1
         if r['outcome'] == 'COMPLETE':
             play_stats[play_name]['completions'] += 1
         play_stats[play_name]['yards'] += r['yards_gained'] if isinstance(r['yards_gained'], (int, float)) else 0
         play_stats[play_name]['rewards'] += r['reward']
         
-        situation = r['situation']
-        if situation and situation not in situation_stats:
-            situation_stats[situation] = {'total': 0, 'completions': 0, 'yards': 0}
+        # Track targets for this play
+        target = r.get('target_role', '')
+        if target:
+            play_stats[play_name]['targets'][target] = play_stats[play_name]['targets'].get(target, 0) + 1
+        
+        # Track which situations this play was used in
         if situation:
+            play_stats[play_name]['situations'][situation] = play_stats[play_name]['situations'].get(situation, 0) + 1
+        
+        # Track scenarios this play was used against
+        if scenario_id:
+            play_stats[play_name]['scenarios'][scenario_id] = play_stats[play_name]['scenarios'].get(scenario_id, 0) + 1
+        
+        # Per-situation stats
+        if situation:
+            if situation not in situation_stats:
+                situation_stats[situation] = {'total': 0, 'completions': 0, 'yards': 0, 'rewards': 0, 'plays': {}}
             situation_stats[situation]['total'] += 1
             if r['outcome'] == 'COMPLETE':
                 situation_stats[situation]['completions'] += 1
             situation_stats[situation]['yards'] += r['yards_gained'] if isinstance(r['yards_gained'], (int, float)) else 0
+            situation_stats[situation]['rewards'] += r['reward']
+            
+            # Track plays used in this situation
+            if play_name not in situation_stats[situation]['plays']:
+                situation_stats[situation]['plays'][play_name] = {'total': 0, 'completions': 0, 'yards': 0, 'rewards': 0}
+            situation_stats[situation]['plays'][play_name]['total'] += 1
+            if r['outcome'] == 'COMPLETE':
+                situation_stats[situation]['plays'][play_name]['completions'] += 1
+            situation_stats[situation]['plays'][play_name]['yards'] += r['yards_gained'] if isinstance(r['yards_gained'], (int, float)) else 0
+            situation_stats[situation]['plays'][play_name]['rewards'] += r['reward']
+        
+        # Per-scenario stats (track plays like situations)
+        if scenario_id:
+            if scenario_id not in scenario_stats:
+                scenario_stats[scenario_id] = {'total': 0, 'completions': 0, 'yards': 0, 'rewards': 0, 'plays': {}}
+            scenario_stats[scenario_id]['total'] += 1
+            if r['outcome'] == 'COMPLETE':
+                scenario_stats[scenario_id]['completions'] += 1
+            scenario_stats[scenario_id]['yards'] += r['yards_gained'] if isinstance(r['yards_gained'], (int, float)) else 0
+            scenario_stats[scenario_id]['rewards'] += r['reward']
+            
+            # Track plays used against this defense
+            if play_name not in scenario_stats[scenario_id]['plays']:
+                scenario_stats[scenario_id]['plays'][play_name] = {'total': 0, 'completions': 0, 'yards': 0, 'rewards': 0}
+            scenario_stats[scenario_id]['plays'][play_name]['total'] += 1
+            if r['outcome'] == 'COMPLETE':
+                scenario_stats[scenario_id]['plays'][play_name]['completions'] += 1
+            scenario_stats[scenario_id]['plays'][play_name]['yards'] += r['yards_gained'] if isinstance(r['yards_gained'], (int, float)) else 0
+            scenario_stats[scenario_id]['plays'][play_name]['rewards'] += r['reward']
+        
+        # Per-formation stats
+        if formation:
+            if formation not in formation_stats:
+                formation_stats[formation] = {'total': 0, 'completions': 0, 'yards': 0}
+            formation_stats[formation]['total'] += 1
+            if r['outcome'] == 'COMPLETE':
+                formation_stats[formation]['completions'] += 1
+            formation_stats[formation]['yards'] += r['yards_gained'] if isinstance(r['yards_gained'], (int, float)) else 0
     
     # Compute averages
     for play_name, stats in play_stats.items():
@@ -287,12 +370,65 @@ def train_policy(
             stats['avg_yards'] = stats['yards'] / stats['total']
             stats['avg_reward'] = stats['rewards'] / stats['total']
             stats['completion_rate'] = stats['completions'] / stats['total']
+            stats['most_used_target'] = max(stats['targets'].items(), key=lambda x: x[1])[0] if stats['targets'] else None
+            stats['best_situation'] = max(stats['situations'].items(), key=lambda x: x[1])[0] if stats['situations'] else None
+    
+    # Compute situation averages and find best plays per situation
+    situation_best_plays = {}
+    for sit, stats in situation_stats.items():
+        if stats['total'] > 0:
+            stats['avg_yards'] = round(stats['yards'] / stats['total'], 2)
+            stats['avg_reward'] = round(stats['rewards'] / stats['total'], 2)
+            stats['completion_rate'] = round(stats['completions'] / stats['total'], 3)
+            
+            # Compute averages for each play in this situation
+            for play_name, pstats in stats['plays'].items():
+                if pstats['total'] > 0:
+                    pstats['avg_yards'] = round(pstats['yards'] / pstats['total'], 2)
+                    pstats['avg_reward'] = round(pstats['rewards'] / pstats['total'], 2)
+                    pstats['completion_rate'] = round(pstats['completions'] / pstats['total'], 3)
+            
+            # Sort plays by avg_reward to find best for this situation
+            sorted_plays = sorted(stats['plays'].items(), key=lambda x: x[1].get('avg_reward', 0), reverse=True)
+            situation_best_plays[sit] = sorted_plays[:10]  # Top 10 for each situation
+    
+    # Compute scenario averages and best plays per scenario
+    scenario_best_plays = {}
+    for scen_id, stats in scenario_stats.items():
+        if stats['total'] > 0:
+            stats['avg_yards'] = round(stats['yards'] / stats['total'], 2)
+            stats['avg_reward'] = round(stats['rewards'] / stats['total'], 2)
+            stats['completion_rate'] = round(stats['completions'] / stats['total'], 3)
+            
+            # Compute averages for each play against this defense
+            for play_name, pstats in stats.get('plays', {}).items():
+                if pstats['total'] > 0:
+                    pstats['avg_yards'] = round(pstats['yards'] / pstats['total'], 2)
+                    pstats['avg_reward'] = round(pstats['rewards'] / pstats['total'], 2)
+                    pstats['completion_rate'] = round(pstats['completions'] / pstats['total'], 3)
+            
+            # Sort plays by avg_reward to find best for this defense
+            sorted_plays = sorted(stats.get('plays', {}).items(), key=lambda x: x[1].get('avg_reward', 0), reverse=True)
+            scenario_best_plays[scen_id] = sorted_plays[:5]  # Top 5 for each defense
+    
+    # Compute formation averages
+    for form, stats in formation_stats.items():
+        if stats['total'] > 0:
+            stats['avg_yards'] = round(stats['yards'] / stats['total'], 2)
+            stats['completion_rate'] = round(stats['completions'] / stats['total'], 3)
     
     summary = {
         'timestamp': timestamp,
         'algorithm': algorithm,
         'total_steps': steps,
-        'final_avg_reward': sum(reward_history[-100:]) / min(100, len(reward_history)),
+        'total_plays_available': len(plays),
+        'num_base_plays': len([p for p in plays if not p.name.startswith('Gen')]),
+        'num_generated_plays': len([p for p in plays if p.name.startswith('Gen')]),
+        'final_avg_reward': round(sum(reward_history[-100:]) / min(100, len(reward_history)), 2),
+        'reward_std_dev': round(float(np.std(reward_history)) if reward_history else 0, 2),
+        'total_completions': sum(1 for r in detailed_results if r['outcome'] == 'COMPLETE'),
+        'total_attempts': len(detailed_results),
+        'overall_completion_rate': round(sum(1 for r in detailed_results if r['outcome'] == 'COMPLETE') / len(detailed_results), 3) if detailed_results else 0,
         'best_plays_by_situation': {
             BUCKET_NAMES.get(k, f"bucket_{k}"): {
                 'play_name': plays[v].name if v < len(plays) else f'action_{v}',
@@ -300,22 +436,198 @@ def train_policy(
             }
             for k, v in best_actions.items()
         },
+        'top_plays_per_situation': {
+            sit: [
+                {'play_name': pn, 'attempts': ps['total'], 'completion_rate': ps.get('completion_rate', 0), 
+                 'avg_yards': ps.get('avg_yards', 0), 'avg_reward': ps.get('avg_reward', 0)}
+                for pn, ps in plays_list
+            ]
+            for sit, plays_list in situation_best_plays.items()
+        },
+        'situation_performance': {
+            sit: {
+                'total_attempts': stats['total'],
+                'completions': stats['completions'],
+                'completion_rate': stats.get('completion_rate', 0),
+                'avg_yards': stats.get('avg_yards', 0),
+                'avg_reward': stats.get('avg_reward', 0),
+                'num_unique_plays_used': len(stats['plays'])
+            }
+            for sit, stats in situation_stats.items()
+        },
         'play_performance': {
             name: {
                 'attempts': s['total'],
+                'completions': s['completions'],
                 'completion_rate': round(s.get('completion_rate', 0), 3),
                 'avg_yards': round(s.get('avg_yards', 0), 2),
-                'avg_reward': round(s.get('avg_reward', 0), 2)
+                'avg_reward': round(s.get('avg_reward', 0), 2),
+                'total_yards': round(s['yards'], 1),
+                'total_reward': round(s['rewards'], 1),
+                'most_used_target': s.get('most_used_target'),
+                'best_situation': s.get('best_situation'),
+                'situations_used_in': list(s['situations'].keys()),
+                'scenarios_used_against': len(s['scenarios'])
             }
             for name, s in sorted(play_stats.items(), key=lambda x: x[1].get('avg_reward', 0), reverse=True)
         },
-        'situation_performance': situation_stats
+        'best_plays_by_defense': {
+            next((sc.name for sc in scenarios if sc.id == scen_id), scen_id): {
+                'play_name': plays_list[0][0] if plays_list else None,
+                'avg_reward': plays_list[0][1].get('avg_reward', 0) if plays_list else 0,
+                'completion_rate': plays_list[0][1].get('completion_rate', 0) if plays_list else 0
+            }
+            for scen_id, plays_list in scenario_best_plays.items()
+        },
+        'top_plays_per_defense': {
+            next((sc.name for sc in scenarios if sc.id == scen_id), scen_id): [
+                {'play_name': pn, 'attempts': ps['total'], 'completion_rate': ps.get('completion_rate', 0),
+                 'avg_yards': ps.get('avg_yards', 0), 'avg_reward': ps.get('avg_reward', 0)}
+                for pn, ps in plays_list
+            ]
+            for scen_id, plays_list in scenario_best_plays.items()
+        },
+        'scenario_performance': {
+            next((sc.name for sc in scenarios if sc.id == scen_id), scen_id): {
+                'total_attempts': stats['total'],
+                'completions': stats['completions'],
+                'completion_rate': stats.get('completion_rate', 0),
+                'avg_yards': stats.get('avg_yards', 0),
+                'avg_reward': stats.get('avg_reward', 0),
+                'num_unique_plays_used': len(stats.get('plays', {}))
+            }
+            for scen_id, stats in scenario_stats.items()
+        },
+        'formation_performance': formation_stats
     }
     
     with open(summary_path, 'w') as f:
         json.dump(summary, f, indent=2)
     if verbose:
         print(f"Training summary saved to: {summary_path}")
+    
+    # Create per-situation subfolders with CSVs
+    situations_dir = run_dir / "by_situation"
+    situations_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Prepare visualization helpers (only if visualize flag is set)
+    viz_imports_ok = False
+    if visualize:
+        try:
+            from fieldos_engine.utils.viz import visualize_play_static
+            from fieldos_engine.sim.engine import SimulationEngine
+            from fieldos_engine.sim.coverage import CoverageAssignment
+            viz_imports_ok = True
+            
+            # Build play lookup
+            play_by_name = {p.name: p for p in plays}
+            if hasattr(env, 'generated_plays'):
+                for i, gen_play in enumerate(env.generated_plays):
+                    play_by_name[gen_play.name] = gen_play
+                    play_by_name[f"action_{len(plays) + i}"] = gen_play
+            
+            off_player_objs = {role: registry.players.get(pid) for role, pid in off_players.items()}
+            def_player_objs = {role: registry.players.get(pid) for role, pid in def_players.items()}
+        except ImportError:
+            pass
+    
+    for situation in BUCKET_NAMES.values():
+        sit_dir = situations_dir / situation.lower()
+        sit_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Filter results for this situation
+        sit_results = [r for r in detailed_results if r.get('situation') == situation]
+        
+        if sit_results:
+            # Save CSV for this situation
+            sit_csv_path = sit_dir / "results.csv"
+            with open(sit_csv_path, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=sit_results[0].keys())
+                writer.writeheader()
+                writer.writerows(sit_results)
+            
+            # Save summary for this situation
+            sit_summary = {
+                'situation': situation,
+                'total_attempts': len(sit_results),
+                'completions': sum(1 for r in sit_results if r['outcome'] == 'COMPLETE'),
+                'completion_rate': round(sum(1 for r in sit_results if r['outcome'] == 'COMPLETE') / len(sit_results), 3),
+                'avg_yards': round(sum(r['yards_gained'] for r in sit_results if isinstance(r['yards_gained'], (int, float))) / len(sit_results), 2),
+                'top_plays': situation_best_plays.get(situation, [])[:5]
+            }
+            with open(sit_dir / "summary.json", 'w') as f:
+                json.dump(sit_summary, f, indent=2)
+            
+            # Generate visualizations for top 3 plays in this situation
+            if visualize and viz_imports_ok and situation in situation_best_plays:
+                top_sit_plays = situation_best_plays[situation][:3]  # Top 3 for each situation
+                
+                for play_name, pstats in top_sit_plays:
+                    play = play_by_name.get(play_name)
+                    if not play:
+                        continue
+                    
+                    # Find best target for this play in this situation
+                    sit_play_results = [r for r in sit_results if r['play_name'] == play_name]
+                    target_counts = {}
+                    for r in sit_play_results:
+                        if r['outcome'] == 'COMPLETE' and r.get('target_role'):
+                            target_counts[r['target_role']] = target_counts.get(r['target_role'], 0) + 1
+                    best_target = max(target_counts, key=target_counts.get) if target_counts else None
+                    
+                    # Find best scenario for this play in this situation
+                    scenario_yards = {}
+                    scenario_counts = {}
+                    for r in sit_play_results:
+                        scen_id = r.get('scenario_id')
+                        if scen_id:
+                            if scen_id not in scenario_yards:
+                                scenario_yards[scen_id] = 0
+                                scenario_counts[scen_id] = 0
+                            scenario_yards[scen_id] += r['yards_gained'] if isinstance(r['yards_gained'], (int, float)) else 0
+                            scenario_counts[scen_id] += 1
+                    
+                    best_scenario_id = None
+                    best_scenario_avg = 0
+                    for scen_id, total_yards in scenario_yards.items():
+                        avg = total_yards / scenario_counts[scen_id] if scenario_counts.get(scen_id, 0) > 0 else 0
+                        if avg > best_scenario_avg:
+                            best_scenario_avg = avg
+                            best_scenario_id = scen_id
+                    
+                    best_scenario_obj = next((s for s in scenarios if s.id == best_scenario_id), scenarios[0]) if best_scenario_id else scenarios[0]
+                    
+                    # Generate visualization
+                    rng = np.random.default_rng(seed)
+                    receiver_positions = {slot.role: slot.position for slot in play.formation.slots}
+                    
+                    coverage = CoverageAssignment(
+                        best_scenario_obj.defense_call,
+                        best_scenario_obj.defender_start_positions,
+                        list(play.qb_plan.progression_roles),
+                        rng=rng,
+                        receiver_positions=receiver_positions
+                    )
+                    
+                    safe_name = play_name.replace(" ", "_").replace("/", "_").replace("(", "").replace(")", "")[:40]
+                    viz_path = sit_dir / f"{safe_name}.png"
+                    
+                    stats_dict = {
+                        'completion_rate': pstats.get('completion_rate', 0),
+                        'avg_yards': pstats.get('avg_yards', 0),
+                        'attempts': pstats.get('total', 0),
+                        'best_situation': situation
+                    }
+                    
+                    visualize_play_static(
+                        play, best_scenario_obj, str(viz_path), coverage.assignments,
+                        target_info=best_target if best_target else "1st read",
+                        best_scenario_info=best_scenario_obj.name,
+                        stats_info=stats_dict
+                    )
+    
+    if verbose:
+        print(f"Per-situation data saved to: {situations_dir}")
     
     # Create a simple result object for compatibility
     from dataclasses import dataclass
@@ -328,7 +640,7 @@ def train_policy(
         algorithm: str
         reward_history: list
     
-    import numpy as np
+
     result = TrainingResultCompat(
         total_steps=steps,
         final_reward_mean=float(np.mean(reward_history[-100:])),
@@ -462,7 +774,7 @@ To analyze results:
             from fieldos_engine.utils.viz import visualize_play_static
             from fieldos_engine.sim.engine import SimulationEngine
             from fieldos_engine.sim.coverage import CoverageAssignment
-            import numpy as np
+
             
             # Create visualizations subfolder in this training run
             viz_dir = run_dir / "visualizations"
@@ -473,8 +785,25 @@ To analyze results:
                 print("GENERATING VISUALIZATIONS")
                 print(f"{'='*60}")
             
-            # Get top 5 plays by performance
-            top_plays = list(summary['play_performance'].items())[:5]
+            # Get top 5 plays by avg_reward (include both base and generated)
+            all_play_stats = list(summary['play_performance'].items())
+            all_play_stats.sort(key=lambda x: x[1].get('avg_reward', 0), reverse=True)
+            top_plays = all_play_stats[:10]  # Top 10 overall
+            
+            if verbose and top_plays:
+                print(f"\n  Generating diagrams for top {len(top_plays)} plays...")
+            
+            # Build a lookup for play objects by name
+            # Include both base plays and generated plays from the env
+            play_by_name = {p.name: p for p in plays}  # Base plays by name
+            # Add generated plays - they're named "Gen Play X" in env but appear as action_X in results
+            # Map them both ways for lookup
+            if hasattr(env, 'generated_plays'):
+                for i, gen_play in enumerate(env.generated_plays):
+                    play_by_name[gen_play.name] = gen_play
+                    # Also map by action_X name format (action index = len(base_plays) + gen_index)
+                    action_idx = len(plays) + i
+                    play_by_name[f"action_{action_idx}"] = gen_play
             
             # Get offensive and defensive player objects
             off_player_objs = {role: registry.players.get(pid) for role, pid in off_players.items()}
@@ -483,9 +812,11 @@ To analyze results:
             engine = SimulationEngine(seed=seed)
             
             for play_name, stats in top_plays:
-                # Find the play object
-                play = next((p for p in plays if p.name == play_name), None)
+                # Find the play object by name
+                play = play_by_name.get(play_name)
                 if not play:
+                    if verbose:
+                        print(f"\n  Skipping: {play_name} (play object not found)")
                     continue
                 
                 # Analyze training data to find best target and scenario for this play
@@ -519,6 +850,26 @@ To analyze results:
                         best_scenario_avg = avg
                         best_scenario_id = scen_id
                 
+                # Find best situation (highest avg yards by down/distance bucket)
+                situation_yards = {}
+                situation_counts = {}
+                for r in play_results:
+                    sit = r.get('situation')
+                    if sit:
+                        if sit not in situation_yards:
+                            situation_yards[sit] = 0
+                            situation_counts[sit] = 0
+                        situation_yards[sit] += r['yards_gained'] if isinstance(r['yards_gained'], (int, float)) else 0
+                        situation_counts[sit] += 1
+                
+                best_situation = None
+                best_situation_avg = 0
+                for sit, total_yards in situation_yards.items():
+                    avg = total_yards / situation_counts[sit] if situation_counts[sit] > 0 else 0
+                    if avg > best_situation_avg:
+                        best_situation_avg = avg
+                        best_situation = sit
+                
                 # Get scenario object for best scenario
                 best_scenario_obj = next((s for s in scenarios if s.id == best_scenario_id), scenarios[0]) if best_scenario_id else scenarios[0]
                 
@@ -527,6 +878,8 @@ To analyze results:
                     print(f"    vs {best_scenario_obj.name}")
                     if best_target:
                         print(f"    Best target: {best_target}")
+                    if best_situation:
+                        print(f"    Best situation: {best_situation}")
                 
                 # Get coverage assignments with receiver positions for proper matching
                 rng = np.random.default_rng(seed)
@@ -555,7 +908,8 @@ To analyze results:
                 stats_dict = {
                     'completion_rate': stats.get('completion_rate', 0),
                     'avg_yards': stats.get('avg_yards', 0),
-                    'attempts': stats.get('attempts', 0)
+                    'attempts': stats.get('attempts', 0),
+                    'best_situation': best_situation
                 }
                 
                 visualize_play_static(
@@ -595,7 +949,7 @@ def get_recommendation(policy, situation: str, playbook: list) -> str:
     Returns:
         Recommended play name
     """
-    import numpy as np
+
 
     bucket_map = {
         "1ST_ANY": 0, "2ND_SHORT": 1, "2ND_LONG": 2,
@@ -641,8 +995,8 @@ Uses situation-aware defense (coverage adjusts to down/distance) and generated p
                         help="Path to save trained policy (default: models/policy.pkl)")
     parser.add_argument("--no-generated", action="store_true",
                         help="Disable generated plays (use only base playbook)")
-    parser.add_argument("--num-generated", type=int, default=20,
-                        help="Number of generated plays to add (default: 20)")
+    parser.add_argument("--num-generated", type=int, default=100,
+                        help="Number of generated plays to add (default: 100)")
     parser.add_argument("--visualize", action="store_true",
                         help="Generate visualizations of top plays")
     parser.add_argument("--quiet", action="store_true",

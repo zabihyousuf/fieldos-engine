@@ -77,6 +77,22 @@ def load_demo_data():
                 play = Play(**item)
                 registry.plays.create(play.id, play)
 
+        # Load motion plays (if exists)
+        motion_plays_path = data_dir / "motion_plays.json"
+        if motion_plays_path.exists():
+            with open(motion_plays_path) as f:
+                for item in json.load(f):
+                    play = Play(**item)
+                    registry.plays.create(play.id, play)
+
+        # Load trick plays (if exists)
+        trick_plays_path = data_dir / "trick_plays.json"
+        if trick_plays_path.exists():
+            with open(trick_plays_path) as f:
+                for item in json.load(f):
+                    play = Play(**item)
+                    registry.plays.create(play.id, play)
+
         # Load scenarios
         with open(data_dir / "scenarios.json") as f:
             for item in json.load(f):

@@ -1,0 +1,184 @@
+[
+  {
+    "id": "play_shovel_option",
+    "name": "Shovel Option",
+    "formation": {
+      "id": "form_spread_shovel",
+      "name": "Spread Shovel",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": -2.0, "y": 3.0}},
+        {"role": "WR2", "position": {"x": 0.0, "y": 12.0}},
+        {"role": "WR3", "position": {"x": 0.0, "y": -12.0}}
+      ]
+    },
+    "pitch_event": {
+      "passer": "QB",
+      "receiver": "WR1",
+      "trigger_time_ms": 600,
+      "new_thrower": "WR1",
+      "pitch_type": "shovel"
+    },
+    "assignments": {
+      "QB": {"id": "route_qb_rollout_left", "name": "QB Rollout Left", "breakpoints": [{"x_yards": -2.0, "y_yards": -4.0, "time_ms": 500}, {"x_yards": 0.0, "y_yards": -6.0, "time_ms": 1000}]},
+      "CENTER": {"id": "route_center_option_flat", "name": "Option Flat", "breakpoints": [{"x_yards": 3.0, "y_yards": 0.0, "time_ms": 600}, {"x_yards": 5.0, "y_yards": 5.0, "time_ms": 1200}]},
+      "WR1": {"id": "route_shovel_receiver", "name": "Shovel Receive and Throw", "breakpoints": [{"x_yards": 0.0, "y_yards": 1.0, "time_ms": 400}, {"x_yards": 2.0, "y_yards": 0.0, "time_ms": 800}]},
+      "WR2": {"id": "route_post_deep", "name": "Deep Post", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 16.0, "y_yards": -6.0, "time_ms": 2800}]},
+      "WR3": {"id": "route_out_option", "name": "Out Option", "breakpoints": [{"x_yards": 6.0, "y_yards": 0.0, "time_ms": 1000}, {"x_yards": 8.0, "y_yards": -6.0, "time_ms": 1600}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR2", "CENTER", "WR3"],
+      "max_time_to_throw_ms": 3500.0,
+      "scramble_allowed": true,
+      "pitch_progression": ["WR2", "CENTER", "WR3"]
+    }
+  },
+  {
+    "id": "play_reverse_pass",
+    "name": "Reverse Pass",
+    "formation": {
+      "id": "form_trips_reverse",
+      "name": "Trips Reverse",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": 0.0, "y": 10.0}},
+        {"role": "WR2", "position": {"x": 0.0, "y": 7.0}},
+        {"role": "WR3", "position": {"x": 0.0, "y": -8.0}}
+      ]
+    },
+    "pre_snap_motion": {
+      "mover": "WR3",
+      "start_position": {"x": 0.0, "y": -8.0},
+      "end_position": {"x": -2.0, "y": 4.0},
+      "direction": "jet_motion",
+      "duration_ms": 1000
+    },
+    "pitch_event": {
+      "passer": "QB",
+      "receiver": "WR3",
+      "trigger_time_ms": 400,
+      "new_thrower": "WR3",
+      "pitch_type": "reverse_toss"
+    },
+    "assignments": {
+      "QB": {"id": "route_qb_fake_bootleg", "name": "Fake Bootleg", "breakpoints": [{"x_yards": -1.0, "y_yards": -3.0, "time_ms": 400}, {"x_yards": 5.0, "y_yards": -8.0, "time_ms": 1400}]},
+      "CENTER": {"id": "route_center_delay_seam", "name": "Delay Seam", "breakpoints": [{"x_yards": 2.0, "y_yards": 0.0, "time_ms": 800}, {"x_yards": 12.0, "y_yards": -2.0, "time_ms": 2400}]},
+      "WR1": {"id": "route_go_sideline", "name": "Go Sideline", "breakpoints": [{"x_yards": 10.0, "y_yards": 2.0, "time_ms": 1800}, {"x_yards": 22.0, "y_yards": 3.0, "time_ms": 4000}]},
+      "WR2": {"id": "route_dig_clear", "name": "Dig Clear", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1600}, {"x_yards": 12.0, "y_yards": -6.0, "time_ms": 2200}]},
+      "WR3": {"id": "route_reverse_throw", "name": "Reverse Throw Position", "breakpoints": [{"x_yards": -3.0, "y_yards": 6.0, "time_ms": 600}, {"x_yards": -1.0, "y_yards": 8.0, "time_ms": 1000}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR1", "WR2", "CENTER"],
+      "max_time_to_throw_ms": 4000.0,
+      "scramble_allowed": true,
+      "pitch_progression": ["WR1", "WR2", "CENTER", "QB"]
+    }
+  },
+  {
+    "id": "play_double_move_pitch",
+    "name": "Double Move Pitch",
+    "formation": {
+      "id": "form_twins_pitch",
+      "name": "Twins Pitch",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": 0.0, "y": 10.0}},
+        {"role": "WR2", "position": {"x": -2.0, "y": 4.0}},
+        {"role": "WR3", "position": {"x": 0.0, "y": -10.0}}
+      ]
+    },
+    "pitch_event": {
+      "passer": "QB",
+      "receiver": "WR2",
+      "trigger_time_ms": 800,
+      "new_thrower": "WR2",
+      "pitch_type": "lateral"
+    },
+    "assignments": {
+      "QB": {"id": "route_qb_pump_pitch", "name": "Pump Fake and Pitch", "breakpoints": [{"x_yards": -3.0, "y_yards": 2.0, "time_ms": 600}, {"x_yards": -2.0, "y_yards": 6.0, "time_ms": 1200}]},
+      "CENTER": {"id": "route_center_check_block", "name": "Check Block Release", "breakpoints": [{"x_yards": 1.0, "y_yards": 0.0, "time_ms": 400}, {"x_yards": 6.0, "y_yards": 4.0, "time_ms": 1400}]},
+      "WR1": {"id": "route_comeback_hitch", "name": "Comeback Hitch", "breakpoints": [{"x_yards": 12.0, "y_yards": 0.0, "time_ms": 2000}, {"x_yards": 10.0, "y_yards": 2.0, "time_ms": 2400}]},
+      "WR2": {"id": "route_pitch_throw_spot", "name": "Pitch Throwing Spot", "breakpoints": [{"x_yards": -4.0, "y_yards": 2.0, "time_ms": 600}, {"x_yards": -2.0, "y_yards": 6.0, "time_ms": 1000}]},
+      "WR3": {"id": "route_deep_corner", "name": "Deep Corner", "breakpoints": [{"x_yards": 10.0, "y_yards": 0.0, "time_ms": 1800}, {"x_yards": 16.0, "y_yards": -8.0, "time_ms": 3000}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR1", "WR3", "CENTER"],
+      "max_time_to_throw_ms": 3500.0,
+      "scramble_allowed": true,
+      "pitch_progression": ["WR1", "WR3", "CENTER"]
+    }
+  },
+  {
+    "id": "play_center_throwback",
+    "name": "Center Throwback",
+    "formation": {
+      "id": "form_bunch_throwback",
+      "name": "Bunch Throwback",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": 0.0, "y": 3.0}},
+        {"role": "WR2", "position": {"x": 0.0, "y": 1.5}},
+        {"role": "WR3", "position": {"x": 0.5, "y": 2.25}}
+      ]
+    },
+    "pitch_event": {
+      "passer": "QB",
+      "receiver": "CENTER",
+      "trigger_time_ms": 500,
+      "new_thrower": "CENTER",
+      "pitch_type": "direct_snap_fake"
+    },
+    "assignments": {
+      "QB": {"id": "route_qb_receiver", "name": "QB as Receiver", "breakpoints": [{"x_yards": 2.0, "y_yards": -6.0, "time_ms": 800}, {"x_yards": 8.0, "y_yards": -8.0, "time_ms": 1800}]},
+      "CENTER": {"id": "route_center_throw_spot", "name": "Center Throwing Position", "breakpoints": [{"x_yards": -2.0, "y_yards": -2.0, "time_ms": 400}, {"x_yards": 0.0, "y_yards": -4.0, "time_ms": 800}]},
+      "WR1": {"id": "route_fade_outside", "name": "Fade Outside", "breakpoints": [{"x_yards": 10.0, "y_yards": 4.0, "time_ms": 1800}, {"x_yards": 18.0, "y_yards": 6.0, "time_ms": 3200}]},
+      "WR2": {"id": "route_slant_deep", "name": "Deep Slant", "breakpoints": [{"x_yards": 3.0, "y_yards": 0.0, "time_ms": 500}, {"x_yards": 12.0, "y_yards": -6.0, "time_ms": 2000}]},
+      "WR3": {"id": "route_out_curl", "name": "Out Curl", "breakpoints": [{"x_yards": 6.0, "y_yards": 1.0, "time_ms": 1000}, {"x_yards": 7.0, "y_yards": 5.0, "time_ms": 1500}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR1", "WR2", "WR3"],
+      "max_time_to_throw_ms": 3500.0,
+      "scramble_allowed": false,
+      "pitch_progression": ["QB", "WR1", "WR2", "WR3"]
+    }
+  },
+  {
+    "id": "play_halfback_pass",
+    "name": "Halfback Pass",
+    "formation": {
+      "id": "form_i_formation",
+      "name": "I Formation",
+      "slots": [
+        {"role": "QB", "position": {"x": -5.0, "y": 0.0}},
+        {"role": "CENTER", "position": {"x": 0.0, "y": 0.0}},
+        {"role": "WR1", "position": {"x": -3.0, "y": 0.0}},
+        {"role": "WR2", "position": {"x": 0.0, "y": 12.0}},
+        {"role": "WR3", "position": {"x": 0.0, "y": -12.0}}
+      ]
+    },
+    "pitch_event": {
+      "passer": "QB",
+      "receiver": "WR1",
+      "trigger_time_ms": 400,
+      "new_thrower": "WR1",
+      "pitch_type": "toss"
+    },
+    "assignments": {
+      "QB": {"id": "route_qb_play_action", "name": "Play Action Fake", "breakpoints": [{"x_yards": -1.0, "y_yards": 3.0, "time_ms": 400}, {"x_yards": 6.0, "y_yards": 6.0, "time_ms": 1600}]},
+      "CENTER": {"id": "route_center_block_leak", "name": "Block and Leak", "breakpoints": [{"x_yards": 1.0, "y_yards": 0.0, "time_ms": 500}, {"x_yards": 8.0, "y_yards": -4.0, "time_ms": 2000}]},
+      "WR1": {"id": "route_hb_throw_position", "name": "HB Throwing Position", "breakpoints": [{"x_yards": -4.0, "y_yards": -4.0, "time_ms": 500}, {"x_yards": -2.0, "y_yards": -6.0, "time_ms": 900}]},
+      "WR2": {"id": "route_go_post", "name": "Go to Post", "breakpoints": [{"x_yards": 12.0, "y_yards": 0.0, "time_ms": 2000}, {"x_yards": 20.0, "y_yards": -4.0, "time_ms": 3600}]},
+      "WR3": {"id": "route_out_up", "name": "Out and Up", "breakpoints": [{"x_yards": 8.0, "y_yards": -4.0, "time_ms": 1400}, {"x_yards": 18.0, "y_yards": -2.0, "time_ms": 3200}]}
+    },
+    "qb_plan": {
+      "progression_roles": ["WR2", "WR3", "CENTER"],
+      "max_time_to_throw_ms": 4000.0,
+      "scramble_allowed": true,
+      "pitch_progression": ["WR2", "WR3", "CENTER", "QB"]
+    }
+  }
+]

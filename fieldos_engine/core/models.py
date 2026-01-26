@@ -446,3 +446,410 @@ class PlayOutcome(BaseModel):
     separation_at_throw: Optional[float] = None
     separation_at_catch: Optional[float] = None
     failure_modes: List[FailureMode] = Field(default_factory=list)
+
+
+# ============================================================================
+# Game Simulation Models
+# ============================================================================
+
+class DualRolePlayerAttributes(BaseModel):
+    """Player attributes for both offense and defense (for game simulation)."""
+
+    # Offensive attributes
+    off_speed: float = Field(default=70.0, ge=0.0, le=100.0)
+    off_acceleration: float = Field(default=70.0, ge=0.0, le=100.0)
+    off_agility: float = Field(default=70.0, ge=0.0, le=100.0)
+    off_hands: float = Field(default=70.0, ge=0.0, le=100.0)
+    off_route_running: float = Field(default=70.0, ge=0.0, le=100.0)
+
+    # Passing (all players can throw for trick plays)
+    throw_power: float = Field(default=60.0, ge=0.0, le=100.0)
+    short_acc: float = Field(default=60.0, ge=0.0, le=100.0)
+    mid_acc: float = Field(default=55.0, ge=0.0, le=100.0)
+    deep_acc: float = Field(default=50.0, ge=0.0, le=100.0)
+    release_time_ms: float = Field(default=500.0, ge=200.0, le=1000.0)
+    decision_latency_ms: float = Field(default=400.0, ge=100.0, le=1000.0)
+
+    # Defensive attributes
+    def_speed: float = Field(default=70.0, ge=0.0, le=100.0)
+    def_acceleration: float = Field(default=70.0, ge=0.0, le=100.0)
+    man_coverage: float = Field(default=65.0, ge=0.0, le=100.0)
+    zone_coverage: float = Field(default=65.0, ge=0.0, le=100.0)
+    ball_skills: float = Field(default=65.0, ge=0.0, le=100.0)
+    closing_speed: float = Field(default=70.0, ge=0.0, le=100.0)
+    pass_rush: float = Field(default=60.0, ge=0.0, le=100.0)
+    reaction_time_ms: float = Field(default=350.0, ge=100.0, le=800.0)
+
+    def to_offensive_attributes(self) -> PlayerAttributes:
+        """Convert to offensive PlayerAttributes."""
+        return PlayerAttributes(
+            speed=self.off_speed,
+            acceleration=self.off_acceleration,
+            agility=self.off_agility,
+            hands=self.off_hands,
+            route_running=self.off_route_running,
+            throw_power=self.throw_power,
+            short_acc=self.short_acc,
+            mid_acc=self.mid_acc,
+            deep_acc=self.deep_acc,
+            release_time_ms=self.release_time_ms,
+            decision_latency_ms=self.decision_latency_ms,
+        )
+
+    def to_defensive_attributes(self) -> PlayerAttributes:
+        """Convert to defensive PlayerAttributes."""
+        return PlayerAttributes(
+            speed=self.def_speed,
+            acceleration=self.def_acceleration,
+            man_coverage=self.man_coverage,
+            zone_coverage=self.zone_coverage,
+            ball_skills=self.ball_skills,
+            closing_speed=self.closing_speed,
+            pass_rush=self.pass_rush,
+            reaction_time_ms=self.reaction_time_ms,
+        )
+
+
+class GamePlayer(BaseModel):
+    """Player with dual role capabilities for game simulation."""
+    id: str
+    name: str
+    number: int = Field(ge=0, le=99)
+    attributes: DualRolePlayerAttributes = Field(default_factory=DualRolePlayerAttributes)
+
+    def as_offense_player(self, role: Role) -> Player:
+        """Return a Player configured for offense."""
+        return Player(
+            id=f"{self.id}_off",
+            name=self.name,
+            side=Side.OFFENSE,
+            role=role,
+            attributes=self.attributes.to_offensive_attributes()
+        )
+
+    def as_defense_player(self, role: Role) -> Player:
+        """Return a Player configured for defense."""
+        return Player(
+            id=f"{self.id}_def",
+            name=self.name,
+            side=Side.DEFENSE,
+            role=role,
+            attributes=self.attributes.to_defensive_attributes()
+        )
+
+
+class Team(BaseModel):
+    """Team with 5 players and a playbook."""
+    id: str
+    name: str
+    players: List[GamePlayer] = Field(min_length=5, max_length=5)
+    playbook: List[str] = Field(default_factory=list)  # Play IDs
+
+    def get_player_by_number(self, number: int) -> Optional[GamePlayer]:
+        """Get player by jersey number."""
+        return next((p for p in self.players if p.number == number), None)
+
+
+class DriveResult(str, Enum):
+    """Possible drive outcomes."""
+    TOUCHDOWN = "TOUCHDOWN"
+    TURNOVER_ON_DOWNS = "TURNOVER_ON_DOWNS"
+    INTERCEPTION = "INTERCEPTION"
+    IN_PROGRESS = "IN_PROGRESS"
+
+
+class FieldZone(str, Enum):
+    """Field position zones."""
+    OWN_TERRITORY = "OWN_TERRITORY"
+    MIDFIELD = "MIDFIELD"
+    OPPONENT_TERRITORY = "OPPONENT_TERRITORY"
+    REDZONE = "REDZONE"
+    GOALLINE = "GOALLINE"
+
+
+class ExtraPointChoice(str, Enum):
+    """Choice for extra point attempt after touchdown."""
+    ONE_POINT = "ONE_POINT"   # From 5 yard line
+    TWO_POINT = "TWO_POINT"   # From 12 yard line
+
+
+class GameConfig(BaseModel):
+    """Configuration for a game simulation."""
+    field_length: float = Field(default=60.0, description="Total field length in yards")
+    endzone_depth: float = Field(default=7.0, description="Endzone depth in yards")
+    field_width: float = Field(default=25.0, description="Field width in yards")
+    playing_field: float = Field(default=46.0, description="Playing field length (excludes endzones)")
+
+    downs_to_first_down: int = Field(default=3, description="Downs to get first down")
+    downs_to_score: int = Field(default=3, description="Downs to score after first down")
+    first_down_yards: float = Field(default=20.0, description="Yards needed for first down")
+
+    drives_per_team: int = Field(default=10, description="Number of drives per team")
+    td_points: int = Field(default=6, description="Points for touchdown")
+
+    # Extra point configuration
+    xp1_distance: float = Field(default=5.0, description="Distance for 1-point conversion")
+    xp2_distance: float = Field(default=12.0, description="Distance for 2-point conversion")
+    xp1_points: int = Field(default=1, description="Points for 1-point conversion")
+    xp2_points: int = Field(default=2, description="Points for 2-point conversion")
+
+    start_position: float = Field(default=20.0, description="Starting field position from own goal")
+
+    @property
+    def yards_to_midfield(self) -> float:
+        """Yards to midfield from starting position."""
+        return (self.playing_field / 2) - self.start_position
+
+
+class GameState(BaseModel):
+    """Current state of a game."""
+    home_team_id: str
+    away_team_id: str
+    home_score: int = 0
+    away_score: int = 0
+
+    current_drive: int = 1
+    possession: Literal["home", "away"] = "home"
+
+    # Field position (yards from own goal, 0 = own goal, playing_field = opponent goal)
+    field_position: float = 20.0
+
+    down: int = 1
+    yards_to_first: float = 20.0
+    first_down_achieved: bool = False
+
+    # Game progress
+    total_drives: int = 20  # 10 per team
+    game_over: bool = False
+
+    @property
+    def yards_to_goal(self) -> float:
+        """Yards to opponent's goal line."""
+        return 46.0 - self.field_position  # Assuming 46 yard playing field
+
+    @property
+    def field_zone(self) -> FieldZone:
+        """Current field zone."""
+        ytg = self.yards_to_goal
+        if ytg <= 5:
+            return FieldZone.GOALLINE
+        elif ytg <= 20:
+            return FieldZone.REDZONE
+        elif self.field_position >= 23:
+            return FieldZone.OPPONENT_TERRITORY
+        elif self.field_position >= 18:
+            return FieldZone.MIDFIELD
+        else:
+            return FieldZone.OWN_TERRITORY
+
+    def to_game_situation(self) -> GameSituation:
+        """Convert to GameSituation for play simulation."""
+        return GameSituation(
+            down=self.down,
+            yards_to_gain=self.yards_to_first,
+            yardline_to_goal=self.yards_to_goal,
+        )
+
+
+class PlayResult(BaseModel):
+    """Result of a single play in a game context."""
+    play_id: str
+    play_name: str
+    outcome: OutcomeType
+    yards_gained: float
+
+    down: int
+    yards_to_first: float
+    field_position_before: float
+    field_position_after: float
+
+    target_role: Optional[Role] = None
+    passer_id: Optional[str] = None
+    receiver_id: Optional[str] = None
+
+    resulted_in_first_down: bool = False
+    resulted_in_touchdown: bool = False
+    resulted_in_turnover: bool = False
+
+    time_to_throw_ms: Optional[float] = None
+    completion_probability: Optional[float] = None
+
+
+class DriveRecord(BaseModel):
+    """Record of a single drive."""
+    drive_number: int
+    team_id: str
+    starting_field_position: float
+    ending_field_position: float
+    plays: List[PlayResult] = Field(default_factory=list)
+    result: DriveResult = DriveResult.IN_PROGRESS
+    points_scored: int = 0
+    total_yards: float = 0.0
+
+    # Extra point tracking
+    extra_point_choice: Optional[str] = None  # "ONE_POINT" or "TWO_POINT"
+    extra_point_success: Optional[bool] = None
+    extra_point_play: Optional[PlayResult] = None
+
+    @property
+    def num_plays(self) -> int:
+        return len(self.plays)
+
+    @property
+    def scoring_play(self) -> Optional[PlayResult]:
+        """Get the play that scored the touchdown."""
+        for play in self.plays:
+            if play.resulted_in_touchdown:
+                return play
+        return None
+
+
+class PlayerGameStats(BaseModel):
+    """Individual player stats for a game."""
+    player_id: str
+    player_name: str
+    player_number: int
+
+    # Passing
+    pass_attempts: int = 0
+    completions: int = 0
+    passing_yards: float = 0.0
+    touchdowns_thrown: int = 0
+    interceptions_thrown: int = 0
+
+    # Receiving
+    targets: int = 0
+    receptions: int = 0
+    receiving_yards: float = 0.0
+    touchdowns_receiving: int = 0
+
+    # Defense
+    coverage_snaps: int = 0
+    passes_defended: int = 0
+    interceptions_caught: int = 0
+
+    @property
+    def completion_pct(self) -> float:
+        if self.pass_attempts == 0:
+            return 0.0
+        return (self.completions / self.pass_attempts) * 100
+
+    @property
+    def catch_pct(self) -> float:
+        if self.targets == 0:
+            return 0.0
+        return (self.receptions / self.targets) * 100
+
+
+class PlayGameStats(BaseModel):
+    """Stats for a specific play across a game."""
+    play_id: str
+    play_name: str
+
+    times_called: int = 0
+    completions: int = 0
+    attempts: int = 0
+    total_yards: float = 0.0
+    touchdowns: int = 0
+    turnovers: int = 0
+
+    # Situational stats
+    times_called_by_down: Dict[int, int] = Field(default_factory=lambda: {1: 0, 2: 0, 3: 0})
+    success_by_down: Dict[int, int] = Field(default_factory=lambda: {1: 0, 2: 0, 3: 0})
+    times_called_by_zone: Dict[str, int] = Field(default_factory=dict)
+
+    first_down_conversions: int = 0
+    third_down_attempts: int = 0
+    third_down_conversions: int = 0
+
+    @property
+    def success_rate(self) -> float:
+        if self.attempts == 0:
+            return 0.0
+        return (self.completions / self.attempts) * 100
+
+    @property
+    def avg_yards(self) -> float:
+        if self.attempts == 0:
+            return 0.0
+        return self.total_yards / self.attempts
+
+    @property
+    def third_down_conversion_rate(self) -> float:
+        if self.third_down_attempts == 0:
+            return 0.0
+        return (self.third_down_conversions / self.third_down_attempts) * 100
+
+
+class TeamGameStats(BaseModel):
+    """Aggregate team stats for a game."""
+    team_id: str
+    team_name: str
+
+    # Scoring
+    total_points: int = 0
+    touchdowns: int = 0
+
+    # Offense
+    total_plays: int = 0
+    total_yards: float = 0.0
+    completions: int = 0
+    attempts: int = 0
+    interceptions_thrown: int = 0
+
+    # Drives
+    drives: int = 0
+    scoring_drives: int = 0
+    turnovers: int = 0
+
+    # Situational
+    first_downs: int = 0
+    third_down_attempts: int = 0
+    third_down_conversions: int = 0
+
+    # By player
+    player_stats: Dict[str, PlayerGameStats] = Field(default_factory=dict)
+
+    # By play
+    play_stats: Dict[str, PlayGameStats] = Field(default_factory=dict)
+
+    @property
+    def completion_pct(self) -> float:
+        if self.attempts == 0:
+            return 0.0
+        return (self.completions / self.attempts) * 100
+
+    @property
+    def yards_per_play(self) -> float:
+        if self.total_plays == 0:
+            return 0.0
+        return self.total_yards / self.total_plays
+
+    @property
+    def third_down_pct(self) -> float:
+        if self.third_down_attempts == 0:
+            return 0.0
+        return (self.third_down_conversions / self.third_down_attempts) * 100
+
+
+class GameResult(BaseModel):
+    """Complete result of a game simulation."""
+    game_id: str
+    home_team_id: str
+    away_team_id: str
+
+    home_score: int
+    away_score: int
+    winner: Optional[str] = None  # team_id or None for tie
+
+    total_plays: int = 0
+    total_drives: int = 0
+
+    home_stats: TeamGameStats
+    away_stats: TeamGameStats
+
+    drive_records: List[DriveRecord] = Field(default_factory=list)
+
+    @property
+    def is_tie(self) -> bool:
+        return self.home_score == self.away_score

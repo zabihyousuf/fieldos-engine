@@ -25,8 +25,8 @@ def setup_data():
 def test_env_creation(setup_data):
     """Test environment creation."""
     env = PlayCallingEnv(
-        playbook=["play_trips_flood", "play_bunch_quick_slants"],
-        scenarios=["scenario_man_cover0", "scenario_zone_cover2"],
+        playbook=["play_trips_flood", "play_bunch_slants"],
+        scenarios=["scenario_man_cover0_no_rush", "scenario_cover2_no_rush"],
         offensive_players={
             Role.QB: "player_qb1",
             Role.CENTER: "player_center1",
@@ -35,11 +35,11 @@ def test_env_creation(setup_data):
             Role.WR3: "player_wr3_1"
         },
         defensive_players={
-            Role.RUSHER: "player_rusher1",
-            Role.CB1: "player_cb1_1",
-            Role.CB2: "player_cb2_1",
-            Role.SAFETY: "player_safety1",
-            Role.LB: "player_lb1"
+            Role.D1: "player_d1",
+            Role.D2: "player_d2",
+            Role.D3: "player_d3",
+            Role.D4: "player_d4",
+            Role.D5: "player_d5"
         },
         seed=42
     )
@@ -52,7 +52,7 @@ def test_env_reset(setup_data):
     """Test environment reset."""
     env = PlayCallingEnv(
         playbook=["play_trips_flood"],
-        scenarios=["scenario_man_cover0"],
+        scenarios=["scenario_man_cover0_no_rush"],
         offensive_players={
             Role.QB: "player_qb1",
             Role.CENTER: "player_center1",
@@ -61,11 +61,11 @@ def test_env_reset(setup_data):
             Role.WR3: "player_wr3_1"
         },
         defensive_players={
-            Role.RUSHER: "player_rusher1",
-            Role.CB1: "player_cb1_1",
-            Role.CB2: "player_cb2_1",
-            Role.SAFETY: "player_safety1",
-            Role.LB: "player_lb1"
+            Role.D1: "player_d1",
+            Role.D2: "player_d2",
+            Role.D3: "player_d3",
+            Role.D4: "player_d4",
+            Role.D5: "player_d5"
         },
         seed=42
     )
@@ -79,7 +79,7 @@ def test_env_step(setup_data):
     """Test environment step."""
     env = PlayCallingEnv(
         playbook=["play_trips_flood"],
-        scenarios=["scenario_man_cover0"],
+        scenarios=["scenario_man_cover0_no_rush"],
         offensive_players={
             Role.QB: "player_qb1",
             Role.CENTER: "player_center1",
@@ -88,11 +88,11 @@ def test_env_step(setup_data):
             Role.WR3: "player_wr3_1"
         },
         defensive_players={
-            Role.RUSHER: "player_rusher1",
-            Role.CB1: "player_cb1_1",
-            Role.CB2: "player_cb2_1",
-            Role.SAFETY: "player_safety1",
-            Role.LB: "player_lb1"
+            Role.D1: "player_d1",
+            Role.D2: "player_d2",
+            Role.D3: "player_d3",
+            Role.D4: "player_d4",
+            Role.D5: "player_d5"
         },
         seed=42
     )
@@ -132,8 +132,8 @@ def test_bandit_policy(setup_data):
 def test_train_bandit_smoke(setup_data):
     """Test training bandit for a few steps."""
     env = PlayCallingEnv(
-        playbook=["play_trips_flood", "play_bunch_quick_slants"],
-        scenarios=["scenario_man_cover0"],
+        playbook=["play_trips_flood", "play_bunch_slants"],
+        scenarios=["scenario_man_cover0_no_rush"],
         offensive_players={
             Role.QB: "player_qb1",
             Role.CENTER: "player_center1",
@@ -142,11 +142,11 @@ def test_train_bandit_smoke(setup_data):
             Role.WR3: "player_wr3_1"
         },
         defensive_players={
-            Role.RUSHER: "player_rusher1",
-            Role.CB1: "player_cb1_1",
-            Role.CB2: "player_cb2_1",
-            Role.SAFETY: "player_safety1",
-            Role.LB: "player_lb1"
+            Role.D1: "player_d1",
+            Role.D2: "player_d2",
+            Role.D3: "player_d3",
+            Role.D4: "player_d4",
+            Role.D5: "player_d5"
         },
         seed=42
     )
@@ -159,7 +159,7 @@ def test_train_bandit_smoke(setup_data):
         seed=42
     )
 
-    result = train_bandit(env, config)
+    result, policy = train_bandit(env, config)
 
     assert result.total_steps == 50
     assert result.algorithm == "BANDIT"

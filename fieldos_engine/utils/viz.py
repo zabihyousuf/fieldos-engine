@@ -8,7 +8,7 @@ import logging
 
 from ..rl.evaluate import EvaluationReport
 from ..sim.engine import SimulationTrace, SimulationState
-from ..core.models import Role, Play, Scenario, CoverageType
+from ..core.models import Role, Play, Scenario, CoverageType, Point2D
 import matplotlib.animation as animation
 import matplotlib.patches as patches
 
@@ -443,18 +443,26 @@ def visualize_play_static(
     play: Play,
     scenario: Scenario,
     output_path: str,
-    coverage_assignments: Optional[Dict[Role, Any]] = None
+    coverage_assignments: Optional[Dict[Role, Any]] = None,
+    target_info: Optional[str] = None,
+    best_scenario_info: Optional[str] = None,
+    stats_info: Optional[Dict] = None
 ) -> str:
     """
     Generate a static image of a play diagram showing:
     - Offensive formation and routes
     - Defensive alignment and coverage assignments
+    - Target recommendation (if provided)
+    - Best scenario info (if provided)
 
     Args:
         play: Play definition
         scenario: Scenario with defensive setup
         output_path: Path to save PNG
         coverage_assignments: Optional coverage assignments
+        target_info: Optional string describing who to throw to
+        best_scenario_info: Optional string describing best scenario to use play against
+        stats_info: Optional dict with completion_rate, avg_yards, attempts
 
     Returns:
         Absolute path to saved file
@@ -470,6 +478,12 @@ def visualize_play_static(
 
     # Draw field
     _draw_field(ax, field_half_width, field_length_behind_los, field_length_ahead_los)
+
+    # Get progression order if available
+    progression_order = {}
+    if hasattr(play, 'qb_plan') and play.qb_plan and hasattr(play.qb_plan, 'progression_roles'):
+        for i, role in enumerate(play.qb_plan.progression_roles):
+            progression_order[role] = i + 1  # 1-indexed
 
     # Plot offensive formation
     for slot in play.formation.slots:
@@ -497,9 +511,45 @@ def visualize_play_static(
                            xytext=(route_xs[-2], route_ys[-2]),
                            arrowprops=dict(arrowstyle='->', color=ROUTE_COLOR, lw=2.5),
                            zorder=5)
+            
+            # Add progression number at route endpoint
+            if slot.role in progression_order:
+                read_num = progression_order[slot.role]
+                # Position label slightly offset from route endpoint
+                label_x = route_xs[-1] + 1.0
+                label_y = route_ys[-1] + 0.5
+                ax.annotate(f'{read_num}', xy=(route_xs[-1], route_ys[-1]),
+                           xytext=(label_x, label_y),
+                           fontsize=12, fontweight='bold', color='#1e40af',
+                           bbox=dict(boxstyle='circle,pad=0.3', facecolor='#dbeafe', 
+                                   edgecolor='#1e40af', linewidth=1.5),
+                           zorder=15)
 
-    # Plot defensive positions
+    # Build adjusted positions for man coverage defenders
+    adjusted_def_positions = {}
     for def_role, pos in scenario.defender_start_positions.items():
+        if coverage_assignments and def_role in coverage_assignments:
+            assignment = coverage_assignments[def_role]
+            if isinstance(assignment, Role):
+                # Man coverage - position defender in front of assigned receiver
+                for slot in play.formation.slots:
+                    if slot.role == assignment:
+                        # Put defender 1-2 yards in front of receiver (same lateral, slightly ahead)
+                        rec_pos = slot.position
+                        adjusted_def_positions[def_role] = Point2D(
+                            x=max(1.0, rec_pos.x + 2.0),  # 2 yards ahead of receiver
+                            y=rec_pos.y  # Same lateral position
+                        )
+                        break
+                else:
+                    adjusted_def_positions[def_role] = pos
+            else:
+                adjusted_def_positions[def_role] = pos
+        else:
+            adjusted_def_positions[def_role] = pos
+
+    # Plot defensive positions (using adjusted positions for man coverage)
+    for def_role, pos in adjusted_def_positions.items():
         plot_x, plot_y = pos.y, pos.x  # Convert: lateral->X, downfield->Y
 
         ax.plot(plot_x, plot_y, 'o', color=DEFENSE_COLOR, markersize=20,
@@ -525,6 +575,28 @@ def visualize_play_static(
     ax.set_title(f'{play.name} vs {scenario.name}\n({coverage_info})',
                  fontsize=14, fontweight='bold', pad=10)
 
+    # Add info box with target and scenario recommendations
+    info_lines = []
+    if target_info:
+        info_lines.append(f"🎯 Target: {target_info}")
+    if best_scenario_info:
+        info_lines.append(f"✓ Best vs: {best_scenario_info}")
+    if stats_info:
+        if 'completion_rate' in stats_info:
+            info_lines.append(f"📊 Comp%: {stats_info['completion_rate']*100:.0f}%")
+        if 'avg_yards' in stats_info:
+            info_lines.append(f"📏 Avg Yards: {stats_info['avg_yards']:.1f}")
+        if 'attempts' in stats_info:
+            info_lines.append(f"🔄 Attempts: {stats_info['attempts']}")
+    
+    if info_lines:
+        info_text = '\n'.join(info_lines)
+        ax.text(0.02, 0.98, info_text, transform=ax.transAxes, fontsize=11,
+                verticalalignment='top', fontfamily='sans-serif',
+                bbox=dict(boxstyle='round,pad=0.5', facecolor='white', 
+                         edgecolor='gray', alpha=0.9),
+                zorder=20)
+
     p = Path(output_path).resolve()
     p.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(str(p), dpi=150, bbox_inches='tight')
@@ -532,3 +604,4 @@ def visualize_play_static(
 
     logger.info(f"Saved static play diagram to {p}")
     return str(p)
+

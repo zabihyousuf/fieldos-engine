@@ -48,6 +48,7 @@ policies/
 checkpoints/
 tensorboard/
 logs/
+training_runs/
 
 # Data
 *.db

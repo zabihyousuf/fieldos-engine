@@ -1,7 +1,7 @@
 """Metrics aggregation and analysis."""
 
 import numpy as np
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass, field
 from collections import defaultdict
 

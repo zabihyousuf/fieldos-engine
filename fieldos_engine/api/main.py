@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routes import router
+from .advisor_routes import advisor_router, setup_teams
 from ..core.registry import registry
 from ..core.models import Route, Formation, Player, Ruleset, Play, Scenario
 
@@ -36,6 +37,7 @@ app.add_middleware(
 
 # Include routes
 app.include_router(router)
+app.include_router(advisor_router)
 
 
 def load_demo_data():
@@ -114,6 +116,13 @@ async def startup_event():
     """Startup tasks."""
     logger.info("FieldOS Engine starting up...")
     load_demo_data()
+
+    # Initialize teams for the advisor
+    from ..teams import get_all_teams
+    my_team, opponents = get_all_teams()
+    setup_teams(my_team, opponents)
+    logger.info(f"Advisor ready: {my_team.name} vs {list(opponents.keys())}")
+
     logger.info("API documentation available at http://localhost:8000/docs")
 
 

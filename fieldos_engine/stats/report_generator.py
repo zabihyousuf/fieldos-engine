@@ -334,12 +334,20 @@ class GameReportGenerator:
 
         for drive in self.game.drive_records:
             for i, play in enumerate(drive.plays):
+                # Format player names for description
+                if play.passer_name and play.receiver_name:
+                    player_desc = f"{play.passer_name} to {play.receiver_name}"
+                elif play.passer_name:
+                    player_desc = f"{play.passer_name}"
+                else:
+                    player_desc = play.play_name
+
                 # Touchdown
                 if play.resulted_in_touchdown:
                     moments.append(KeyMoment(
                         drive=drive.drive_number,
                         play_number=i + 1,
-                        description=f"{play.play_name} - TOUCHDOWN!",
+                        description=f"{player_desc} - TOUCHDOWN!",
                         impact="Scoring play",
                         yards=play.yards_gained
                     ))
@@ -349,7 +357,7 @@ class GameReportGenerator:
                     moments.append(KeyMoment(
                         drive=drive.drive_number,
                         play_number=i + 1,
-                        description=f"{play.play_name} - Big gain!",
+                        description=f"{player_desc} - Big gain!",
                         impact="Explosive play",
                         yards=play.yards_gained
                     ))
@@ -359,7 +367,7 @@ class GameReportGenerator:
                     moments.append(KeyMoment(
                         drive=drive.drive_number,
                         play_number=i + 1,
-                        description=f"{play.play_name} - INTERCEPTION",
+                        description=f"{player_desc} - INTERCEPTION",
                         impact="Momentum shift",
                         yards=play.yards_gained
                     ))
@@ -369,7 +377,7 @@ class GameReportGenerator:
                     moments.append(KeyMoment(
                         drive=drive.drive_number,
                         play_number=i + 1,
-                        description=f"{play.play_name} - 3rd down conversion",
+                        description=f"{player_desc} - 3rd down conversion",
                         impact="Drive sustained",
                         yards=play.yards_gained
                     ))
@@ -502,11 +510,24 @@ class GameReportGenerator:
                 lines.append(f"\n--- Drive {drive.drive_number} ({team_name}) ---")
                 lines.append(f"Total Yards: {drive.total_yards:.1f}")
 
+                # Show lineup for this drive (from first play)
+                if drive.plays and drive.plays[0].offensive_lineup:
+                    lineup = drive.plays[0].offensive_lineup
+                    lineup_str = ", ".join([f"{role}: {name}" for role, name in sorted(lineup.items())])
+                    lines.append(f"Lineup: {lineup_str}")
+
                 # Show each play in the drive
                 for i, play in enumerate(drive.plays, 1):
                     outcome_str = "COMPLETE" if play.outcome.value == "COMPLETE" else play.outcome.value
+                    # Format with player names if available
+                    if play.passer_name and play.receiver_name and outcome_str == "COMPLETE":
+                        play_desc = f"{play.passer_name} to {play.receiver_name}"
+                    elif play.passer_name:
+                        play_desc = f"{play.passer_name} pass ({play.play_name})"
+                    else:
+                        play_desc = play.play_name
                     lines.append(
-                        f"  {i}. {play.play_name}: {outcome_str}, "
+                        f"  {i}. {play_desc}: {outcome_str}, "
                         f"{play.yards_gained:.1f} yds "
                         f"({'TD!' if play.resulted_in_touchdown else '1st Down' if play.resulted_in_first_down else f'D{play.down}'})"
                     )

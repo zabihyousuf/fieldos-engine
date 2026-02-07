@@ -452,42 +452,60 @@ class PlayOutcome(BaseModel):
 # Game Simulation Models
 # ============================================================================
 
-class DualRolePlayerAttributes(BaseModel):
-    """Player attributes for both offense and defense (for game simulation)."""
+class PlayerSpecialty(str, Enum):
+    """Player specialty - what they're best at."""
+    OFFENSE_ONLY = "OFFENSE_ONLY"
+    DEFENSE_ONLY = "DEFENSE_ONLY"
+    TWO_WAY = "TWO_WAY"  # Plays both sides
 
-    # Offensive attributes
-    off_speed: float = Field(default=70.0, ge=0.0, le=100.0)
-    off_acceleration: float = Field(default=70.0, ge=0.0, le=100.0)
-    off_agility: float = Field(default=70.0, ge=0.0, le=100.0)
-    off_hands: float = Field(default=70.0, ge=0.0, le=100.0)
-    off_route_running: float = Field(default=70.0, ge=0.0, le=100.0)
+
+class DualRolePlayerAttributes(BaseModel):
+    """Player attributes for both offense and defense (for game simulation).
+
+    Physical attributes (speed, acceleration, agility) are unified - a player
+    has ONE speed rating that applies to both offense and defense.
+    """
+
+    # Physical attributes (UNIFIED - same for offense and defense)
+    speed: float = Field(default=70.0, ge=0.0, le=100.0, description="Raw speed")
+    acceleration: float = Field(default=70.0, ge=0.0, le=100.0, description="Burst/acceleration")
+    agility: float = Field(default=70.0, ge=0.0, le=100.0, description="Change of direction")
+
+    # Physical measurements
+    height_inches: float = Field(default=72.0, ge=60.0, le=84.0, description="Height in inches (5'0\" to 7'0\")")
+    weight_lbs: float = Field(default=180.0, ge=120.0, le=300.0, description="Weight in pounds")
+
+    # Offensive skill attributes
+    hands: float = Field(default=70.0, ge=0.0, le=100.0, description="Catching ability")
+    route_running: float = Field(default=70.0, ge=0.0, le=100.0, description="Route precision and timing")
 
     # Passing (all players can throw for trick plays)
-    throw_power: float = Field(default=60.0, ge=0.0, le=100.0)
-    short_acc: float = Field(default=60.0, ge=0.0, le=100.0)
-    mid_acc: float = Field(default=55.0, ge=0.0, le=100.0)
-    deep_acc: float = Field(default=50.0, ge=0.0, le=100.0)
-    release_time_ms: float = Field(default=500.0, ge=200.0, le=1000.0)
-    decision_latency_ms: float = Field(default=400.0, ge=100.0, le=1000.0)
+    throw_power: float = Field(default=60.0, ge=0.0, le=100.0, description="Arm strength")
+    short_acc: float = Field(default=60.0, ge=0.0, le=100.0, description="Short pass accuracy (0-10 yds)")
+    mid_acc: float = Field(default=55.0, ge=0.0, le=100.0, description="Medium pass accuracy (10-20 yds)")
+    deep_acc: float = Field(default=50.0, ge=0.0, le=100.0, description="Deep pass accuracy (20+ yds)")
+    release_time_ms: float = Field(default=500.0, ge=200.0, le=1000.0, description="Time to release ball")
+    decision_latency_ms: float = Field(default=400.0, ge=100.0, le=1000.0, description="Read progression speed")
 
-    # Defensive attributes
-    def_speed: float = Field(default=70.0, ge=0.0, le=100.0)
-    def_acceleration: float = Field(default=70.0, ge=0.0, le=100.0)
-    man_coverage: float = Field(default=65.0, ge=0.0, le=100.0)
-    zone_coverage: float = Field(default=65.0, ge=0.0, le=100.0)
-    ball_skills: float = Field(default=65.0, ge=0.0, le=100.0)
-    closing_speed: float = Field(default=70.0, ge=0.0, le=100.0)
-    pass_rush: float = Field(default=60.0, ge=0.0, le=100.0)
-    reaction_time_ms: float = Field(default=350.0, ge=100.0, le=800.0)
+    # Defensive skill attributes
+    man_coverage: float = Field(default=65.0, ge=0.0, le=100.0, description="Man-to-man coverage ability")
+    zone_coverage: float = Field(default=65.0, ge=0.0, le=100.0, description="Zone coverage awareness")
+    ball_skills: float = Field(default=65.0, ge=0.0, le=100.0, description="Ability to make plays on the ball")
+    closing_speed: float = Field(default=70.0, ge=0.0, le=100.0, description="Speed when breaking on the ball")
+    pass_rush: float = Field(default=60.0, ge=0.0, le=100.0, description="Pass rushing ability")
+    reaction_time_ms: float = Field(default=350.0, ge=100.0, le=800.0, description="Reaction to ball in air")
+
+    # Player specialty
+    specialty: PlayerSpecialty = Field(default=PlayerSpecialty.TWO_WAY, description="Offense only, defense only, or two-way player")
 
     def to_offensive_attributes(self) -> PlayerAttributes:
         """Convert to offensive PlayerAttributes."""
         return PlayerAttributes(
-            speed=self.off_speed,
-            acceleration=self.off_acceleration,
-            agility=self.off_agility,
-            hands=self.off_hands,
-            route_running=self.off_route_running,
+            speed=self.speed,
+            acceleration=self.acceleration,
+            agility=self.agility,
+            hands=self.hands,
+            route_running=self.route_running,
             throw_power=self.throw_power,
             short_acc=self.short_acc,
             mid_acc=self.mid_acc,
@@ -499,8 +517,9 @@ class DualRolePlayerAttributes(BaseModel):
     def to_defensive_attributes(self) -> PlayerAttributes:
         """Convert to defensive PlayerAttributes."""
         return PlayerAttributes(
-            speed=self.def_speed,
-            acceleration=self.def_acceleration,
+            speed=self.speed,
+            acceleration=self.acceleration,
+            agility=self.agility,
             man_coverage=self.man_coverage,
             zone_coverage=self.zone_coverage,
             ball_skills=self.ball_skills,
@@ -508,6 +527,143 @@ class DualRolePlayerAttributes(BaseModel):
             pass_rush=self.pass_rush,
             reaction_time_ms=self.reaction_time_ms,
         )
+
+    def can_play_offense(self) -> bool:
+        """Check if player can play offense."""
+        return self.specialty in (PlayerSpecialty.OFFENSE_ONLY, PlayerSpecialty.TWO_WAY)
+
+    def can_play_defense(self) -> bool:
+        """Check if player can play defense."""
+        return self.specialty in (PlayerSpecialty.DEFENSE_ONLY, PlayerSpecialty.TWO_WAY)
+
+    def qb_score(self) -> float:
+        """Calculate QB suitability score (0-100). Higher is better."""
+        if not self.can_play_offense():
+            return 0.0
+
+        # QB needs: throwing ability, quick decisions, some mobility
+        accuracy_avg = (self.short_acc + self.mid_acc + self.deep_acc) / 3
+        # Lower release/decision time is better - normalize to 0-100 where lower ms = higher score
+        release_score = max(0, 100 - (self.release_time_ms - 200) / 6)  # 200ms = 100, 800ms = 0
+        decision_score = max(0, 100 - (self.decision_latency_ms - 100) / 9)  # 100ms = 100, 1000ms = 0
+
+        return (
+            self.throw_power * 0.25 +
+            accuracy_avg * 0.35 +
+            release_score * 0.15 +
+            decision_score * 0.15 +
+            self.speed * 0.05 +
+            self.agility * 0.05
+        )
+
+    def wr_score(self, slot: str = "outside") -> float:
+        """Calculate WR suitability score (0-100). Higher is better.
+
+        Args:
+            slot: "outside" for X/Z receivers, "slot" for slot receiver
+        """
+        if not self.can_play_offense():
+            return 0.0
+
+        base_score = (
+            self.speed * 0.25 +
+            self.hands * 0.30 +
+            self.route_running * 0.30 +
+            self.agility * 0.10 +
+            self.acceleration * 0.05
+        )
+
+        # Height modifier: taller better for outside (contested catches), shorter better for slot (agility)
+        if slot == "outside":
+            # Favor height 72"+ for outside, max bonus at 78"
+            height_bonus = min(10, max(0, (self.height_inches - 70) * 1.5))
+        else:
+            # Favor height under 72" for slot, quicker in traffic
+            height_bonus = min(10, max(0, (74 - self.height_inches) * 1.5))
+
+        return min(100, base_score + height_bonus)
+
+    def center_score(self) -> float:
+        """Calculate Center suitability score (0-100). Higher is better."""
+        if not self.can_play_offense():
+            return 0.0
+
+        # Center needs: reliable hands, route running for outlet passes, some size
+        return (
+            self.hands * 0.35 +
+            self.route_running * 0.25 +
+            self.speed * 0.15 +
+            self.agility * 0.15 +
+            min(100, self.weight_lbs / 2.5) * 0.10  # Slight favor for size
+        )
+
+    def defender_score(self, coverage_type: str = "man") -> float:
+        """Calculate defender suitability score (0-100). Higher is better.
+
+        Args:
+            coverage_type: "man" or "zone"
+        """
+        if not self.can_play_defense():
+            return 0.0
+
+        if coverage_type == "man":
+            return (
+                self.man_coverage * 0.35 +
+                self.speed * 0.25 +
+                self.ball_skills * 0.20 +
+                self.acceleration * 0.10 +
+                self.closing_speed * 0.10
+            )
+        else:  # zone
+            return (
+                self.zone_coverage * 0.35 +
+                self.ball_skills * 0.25 +
+                self.speed * 0.15 +
+                self.closing_speed * 0.15 +
+                self.acceleration * 0.10
+            )
+
+    def rusher_score(self) -> float:
+        """Calculate pass rusher suitability score (0-100). Higher is better."""
+        if not self.can_play_defense():
+            return 0.0
+
+        return (
+            self.pass_rush * 0.40 +
+            self.speed * 0.25 +
+            self.acceleration * 0.20 +
+            self.closing_speed * 0.15
+        )
+
+    def overall_offense_score(self) -> float:
+        """Calculate overall offensive ability score."""
+        if not self.can_play_offense():
+            return 0.0
+
+        # Weight QB, WR, and Center scores
+        return max(
+            self.qb_score(),
+            self.wr_score("outside"),
+            self.wr_score("slot"),
+            self.center_score()
+        )
+
+    def overall_defense_score(self) -> float:
+        """Calculate overall defensive ability score."""
+        if not self.can_play_defense():
+            return 0.0
+
+        return max(
+            self.defender_score("man"),
+            self.defender_score("zone"),
+            self.rusher_score()
+        )
+
+    def height_formatted(self) -> str:
+        """Return height as feet'inches\" format."""
+        feet = int(self.height_inches // 12)
+        inches = int(self.height_inches % 12)
+        return f"{feet}'{inches}\""
 
 
 class GamePlayer(BaseModel):
@@ -539,10 +695,10 @@ class GamePlayer(BaseModel):
 
 
 class Team(BaseModel):
-    """Team with 5 players and a playbook."""
+    """Team with 5-15 players and a playbook."""
     id: str
     name: str
-    players: List[GamePlayer] = Field(min_length=5, max_length=5)
+    players: List[GamePlayer] = Field(min_length=5, max_length=15)
     playbook: List[str] = Field(default_factory=list)  # Play IDs
 
     def get_player_by_number(self, number: int) -> Optional[GamePlayer]:
@@ -665,7 +821,13 @@ class PlayResult(BaseModel):
 
     target_role: Optional[Role] = None
     passer_id: Optional[str] = None
+    passer_name: Optional[str] = None
     receiver_id: Optional[str] = None
+    receiver_name: Optional[str] = None
+
+    # Full lineup for this play (role -> player name)
+    offensive_lineup: Dict[str, str] = Field(default_factory=dict)
+    defensive_lineup: Dict[str, str] = Field(default_factory=dict)
 
     resulted_in_first_down: bool = False
     resulted_in_touchdown: bool = False
@@ -673,6 +835,10 @@ class PlayResult(BaseModel):
 
     time_to_throw_ms: Optional[float] = None
     completion_probability: Optional[float] = None
+
+    def get_player_at_position(self, role: str) -> Optional[str]:
+        """Get the player name at a given offensive position."""
+        return self.offensive_lineup.get(role)
 
 
 class DriveRecord(BaseModel):

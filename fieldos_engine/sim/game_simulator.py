@@ -175,22 +175,118 @@ class GameSimulator:
         return self.home_stats if self.state.possession == "home" else self.away_stats
 
     def _get_offensive_players(self, team: Team) -> Dict[Role, Player]:
-        """Create offensive player roster from team."""
-        roles = [Role.QB, Role.CENTER, Role.WR1, Role.WR2, Role.WR3]
-        players = {}
-        for i, role in enumerate(roles):
-            if i < len(team.players):
-                players[role] = team.players[i].as_offense_player(role)
-        return players
+        """Create offensive player roster from team using dynamic position selection."""
+        return self._select_offensive_lineup(team)
 
     def _get_defensive_players(self, team: Team) -> Dict[Role, Player]:
-        """Create defensive player roster from team."""
-        roles = [Role.D1, Role.D2, Role.D3, Role.D4, Role.D5]
-        players = {}
-        for i, role in enumerate(roles):
-            if i < len(team.players):
-                players[role] = team.players[i].as_defense_player(role)
-        return players
+        """Create defensive player roster from team using dynamic position selection."""
+        return self._select_defensive_lineup(team)
+
+    def _select_offensive_lineup(self, team: Team) -> Dict[Role, Player]:
+        """
+        Select optimal offensive lineup based on player attribute scores.
+        Returns dict mapping Role -> Player for the 5 offensive positions.
+
+        Only considers players who can play offense (specialty = OFFENSE_ONLY or TWO_WAY).
+        """
+        # Filter to only players who can play offense
+        available = [p for p in team.players if p.attributes.can_play_offense()]
+        if len(available) < 5:
+            # Fallback: use all players if not enough offense-eligible
+            available = list(team.players)
+
+        selected: Dict[Role, Player] = {}
+        self._current_offensive_lineup: Dict[Role, GamePlayer] = {}  # Track for names
+
+        # 1. Select QB - highest qb_score
+        qb_candidates = sorted(available, key=lambda p: p.attributes.qb_score(), reverse=True)
+        qb = qb_candidates[0]
+        selected[Role.QB] = qb.as_offense_player(Role.QB)
+        self._current_offensive_lineup[Role.QB] = qb
+        available.remove(qb)
+
+        # 2. Select WR1 (outside) - highest wr_score("outside")
+        wr_candidates = sorted(available, key=lambda p: p.attributes.wr_score("outside"), reverse=True)
+        wr1 = wr_candidates[0]
+        selected[Role.WR1] = wr1.as_offense_player(Role.WR1)
+        self._current_offensive_lineup[Role.WR1] = wr1
+        available.remove(wr1)
+
+        # 3. Select WR2 (outside) - next highest wr_score("outside")
+        wr_candidates = sorted(available, key=lambda p: p.attributes.wr_score("outside"), reverse=True)
+        wr2 = wr_candidates[0]
+        selected[Role.WR2] = wr2.as_offense_player(Role.WR2)
+        self._current_offensive_lineup[Role.WR2] = wr2
+        available.remove(wr2)
+
+        # 4. Select WR3 (slot) - highest wr_score("slot")
+        wr_candidates = sorted(available, key=lambda p: p.attributes.wr_score("slot"), reverse=True)
+        wr3 = wr_candidates[0]
+        selected[Role.WR3] = wr3.as_offense_player(Role.WR3)
+        self._current_offensive_lineup[Role.WR3] = wr3
+        available.remove(wr3)
+
+        # 5. Select Center - highest center_score from remaining
+        center_candidates = sorted(available, key=lambda p: p.attributes.center_score(), reverse=True)
+        center = center_candidates[0] if center_candidates else team.players[-1]
+        selected[Role.CENTER] = center.as_offense_player(Role.CENTER)
+        self._current_offensive_lineup[Role.CENTER] = center
+
+        return selected
+
+    def _select_defensive_lineup(self, team: Team, rusher_needed: bool = False) -> Dict[Role, Player]:
+        """
+        Select optimal defensive lineup based on player attribute scores.
+        Returns dict mapping Role -> Player for the 5 defensive positions.
+
+        Only considers players who can play defense (specialty = DEFENSE_ONLY or TWO_WAY).
+        """
+        # Filter to only players who can play defense
+        available = [p for p in team.players if p.attributes.can_play_defense()]
+        if len(available) < 5:
+            # Fallback: use all players if not enough defense-eligible
+            available = list(team.players)
+
+        selected: Dict[Role, Player] = {}
+        self._current_defensive_lineup: Dict[Role, GamePlayer] = {}  # Track for names
+
+        # Determine coverage type from current scenario (default to man)
+        coverage_type = "man"
+
+        # If rusher needed, select best rusher for D3 first
+        if rusher_needed:
+            rusher_candidates = sorted(available, key=lambda p: p.attributes.rusher_score(), reverse=True)
+            rusher = rusher_candidates[0]
+            selected[Role.D3] = rusher.as_defense_player(Role.D3)
+            self._current_defensive_lineup[Role.D3] = rusher
+            available.remove(rusher)
+
+        # Select remaining defenders by defender_score
+        roles_to_fill = [Role.D1, Role.D2, Role.D4, Role.D5]
+        if not rusher_needed:
+            roles_to_fill.append(Role.D3)
+
+        defender_candidates = sorted(available, key=lambda p: p.attributes.defender_score(coverage_type), reverse=True)
+
+        for i, role in enumerate(roles_to_fill):
+            if i < len(defender_candidates):
+                defender = defender_candidates[i]
+                selected[role] = defender.as_defense_player(role)
+                self._current_defensive_lineup[role] = defender
+
+        return selected
+
+    def get_current_offensive_lineup_names(self) -> Dict[str, str]:
+        """Get a mapping of role -> player name for current offensive lineup."""
+        if not hasattr(self, '_current_offensive_lineup'):
+            return {}
+        return {role.value: player.name for role, player in self._current_offensive_lineup.items()}
+
+    def get_current_defensive_lineup_names(self) -> Dict[str, str]:
+        """Get a mapping of role -> player name for current defensive lineup."""
+        if not hasattr(self, '_current_defensive_lineup'):
+            return {}
+        return {role.value: player.name for role, player in self._current_defensive_lineup.items()}
 
     def _select_play(self, team: Team) -> Optional[Play]:
         """Select a play from team's playbook (random for now, RL can override)."""
@@ -258,6 +354,34 @@ class GameSimulator:
             not self.state.first_down_achieved
         )
 
+        # Get player names from current lineup
+        passer_name = None
+        passer_id = None
+        receiver_name = None
+        receiver_id = None
+        offensive_lineup = {}
+        defensive_lineup = {}
+
+        if hasattr(self, '_current_offensive_lineup'):
+            # QB is always the passer
+            qb_player = self._current_offensive_lineup.get(Role.QB)
+            if qb_player:
+                passer_name = qb_player.name
+                passer_id = qb_player.id
+
+            # Get receiver from target role
+            if outcome.target_role and outcome.target_role in self._current_offensive_lineup:
+                receiver_player = self._current_offensive_lineup.get(outcome.target_role)
+                if receiver_player:
+                    receiver_name = receiver_player.name
+                    receiver_id = receiver_player.id
+
+            # Build full lineup mapping
+            offensive_lineup = {role.value: player.name for role, player in self._current_offensive_lineup.items()}
+
+        if hasattr(self, '_current_defensive_lineup'):
+            defensive_lineup = {role.value: player.name for role, player in self._current_defensive_lineup.items()}
+
         result = PlayResult(
             play_id=play.id,
             play_name=play.name,
@@ -268,6 +392,12 @@ class GameSimulator:
             field_position_before=field_before,
             field_position_after=field_after,
             target_role=outcome.target_role,
+            passer_id=passer_id,
+            passer_name=passer_name,
+            receiver_id=receiver_id,
+            receiver_name=receiver_name,
+            offensive_lineup=offensive_lineup,
+            defensive_lineup=defensive_lineup,
             resulted_in_first_down=resulted_in_first,
             resulted_in_touchdown=resulted_in_td,
             resulted_in_turnover=resulted_in_turnover,
